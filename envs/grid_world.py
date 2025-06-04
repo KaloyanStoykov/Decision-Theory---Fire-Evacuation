@@ -4,6 +4,8 @@ from gymnasium import spaces
 import pygame
 import numpy as np
 from envs.grid import Grid
+from envs.firefighter import FireFighter
+from envs.cat import Cat
 from envs.constants import Action
 
 class FireFighterWorld(gym.Env):
@@ -14,6 +16,9 @@ class FireFighterWorld(gym.Env):
         self.window_size = 512
         self.tile_size = int(self.window_size / self.size)
         self.grid = Grid(size, self.tile_size)
+        self.firefighter = FireFighter(self.tile_size)
+        self.cat = Cat(self.tile_size)
+
         self.canvas = pygame.Surface((self.window_size, self.window_size ))
         self.canvas.fill((255, 255, 255))
 
@@ -62,7 +67,8 @@ class FireFighterWorld(gym.Env):
         return {
             "distance": np.linalg.norm(
                 self._agent_location - self._target_location, ord=1
-            )
+            ),
+            "state": self.grid.state
         }
 
     def reset(self, seed=None, options=None):
@@ -83,6 +89,8 @@ class FireFighterWorld(gym.Env):
         info = self._get_info()
         
         self.grid.create_grid(self.tile_size)
+        self.firefighter = FireFighter(self.tile_size)
+        self.cat = Cat(self.tile_size)
 
         if self.render_mode == "human":
             self._render_frame()
@@ -100,13 +108,17 @@ class FireFighterWorld(gym.Env):
         )
         # An episode is done if the agent has reached the target
 
-        terminated = self.grid.tiles[self._agent_location[1]][self._agent_location[0]].is_on_fire or np.array_equal(self._agent_location, self._target_location)
+        firefighter_dies = self.grid.tiles[self._agent_location[1]][self._agent_location[0]].is_on_fire
+        terminated = firefighter_dies or np.array_equal(self._agent_location, self._target_location)
+        
         reward = 1 if terminated else 0  # Binary sparse rewards
         observation = self._get_obs()
         info = self._get_info()
 
         if self.render_mode == "human":
             self._render_frame()
+            if firefighter_dies:
+                self._animate_death()
 
         return observation, reward, terminated, False, info
 
@@ -122,22 +134,9 @@ class FireFighterWorld(gym.Env):
         if self.clock is None and self.render_mode == "human":
             self.clock = pygame.time.Clock()
 
-        self.grid.draw(self.canvas, self.tile_size)
-            
-        pygame.draw.rect(
-            self.canvas,
-            (255, 233, 0),
-            pygame.Rect(
-                self.tile_size * self._target_location,
-                (self.tile_size, self.tile_size),
-            ),
-        )
-        pygame.draw.circle(
-            self.canvas,
-            (0, 250, 255),
-            (self._agent_location + 0.5) * self.tile_size,
-            self.tile_size / 3,
-        )
+        self.grid.draw(self.canvas, self.tile_size)    
+        self.firefighter.draw(self.canvas, self._agent_location[0], self._agent_location[1])
+        self.cat.draw(self.canvas, self._target_location[0], self._target_location[1])
 
         if self.render_mode == "human":
             # The following line copies our drawings from `self.canvas` to the visible window
@@ -153,6 +152,16 @@ class FireFighterWorld(gym.Env):
             return np.transpose(
                 np.array(pygame.surfarray.pixels3d(self.canvas)), axes=(1, 0, 2)
             )
+
+    def _animate_death(self):
+        self.firefighter.kill()
+        while self.firefighter.anim_state != 0:
+            self.grid.draw(self.canvas, self.tile_size)
+            self.cat.draw(self.canvas, self._target_location[0], self._target_location[1])
+            self.firefighter.draw(self.canvas, self._agent_location[0], self._agent_location[1])
+            self.window.blit(self.canvas, self.canvas.get_rect())
+            pygame.display.update()
+            self.clock.tick(self.metadata["render_fps"])
 
     def close(self):
         if self.window is not None:

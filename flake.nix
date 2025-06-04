@@ -26,7 +26,6 @@
 
           shellHook = ''
             export SDL_VIDEODRIVER=wayland
-            echo "SDL_VIDEODRIVER set to way for Gym UI on Hyprland."
             fish; exit
           '';
         };

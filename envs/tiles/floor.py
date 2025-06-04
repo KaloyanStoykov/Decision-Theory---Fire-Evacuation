@@ -34,8 +34,8 @@ def get_sprite_from_borders(sprite_map: dict, borders: list[Side]):
   return sprite_map[category_name]
  
 class Floor(Tile):
-  def __init__(self, type: FloorType, size: int, borders: list[Side] = []):
-    super().__init__(True, True)
+  def __init__(self, x: int, y: int, state_tile, type: FloorType, size: int, borders: list[Side] = []):
+    super().__init__(x, y, state_tile, True, True)
     
     if type == FloorType.TILE:
       self.set_image(sprites.sprite_map["floor_tile"], size)
@@ -53,4 +53,10 @@ class Floor(Tile):
         raise Exception(f"Floor with type {type} not found")
     
     self.set_image(get_sprite_from_borders(sprites.sprite_map[color + "_carpet"], borders), size)
+    self.update_state()
     
+  def serialize(self):
+    return {
+      **super().serialize(),
+      "type": "floor"
+    }

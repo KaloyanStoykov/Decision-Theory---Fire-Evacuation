@@ -8,8 +8,8 @@ class Item(Tile):
   durability = 10
   is_destroyed = False
     
-  def __init__(self, type: Items, floor: Floor, size: int):
-    super().__init__(False, True)
+  def __init__(self, x: int, y: int, state_tile, type: Items, floor: Floor, size: int):
+    super().__init__(x, y, state_tile, False, True)
     self.floor = floor
     image = None
     
@@ -99,12 +99,15 @@ class Item(Tile):
     self.set_image(image, size)
     self.durability *= DURABILITY_POWER
     self.is_door = type == Items.DOOR or type == Items.TRAPDOOR or type == Items.TRAPDOOR_OPEN or type == Items.DOOR_OPEN
+    self.update_state()
     
   def damage(self):
     self.durability -= 1
 
     if self.durability == 0:
       self.is_destroyed = True
+    
+    self.update_state()
 
   def increase_fire(self):
     if self._fire_state == FIRE_LAST_STEP:
@@ -128,3 +131,12 @@ class Item(Tile):
     scaled_sprite = pygame.transform.scale(sprite_map["fires"][self._fire_state - 1], (square_size * FIRE_SIZE_ON_OBJECT, square_size * FIRE_SIZE_ON_OBJECT))
     canvas.blit(scaled_sprite, (x * square_size + square_size * (1 - FIRE_SIZE_ON_OBJECT) / 2, y * square_size + square_size * (1 - FIRE_SIZE_ON_OBJECT)))
     self.increase_fire()
+  
+  def serialize(self):
+    return {
+      **super().serialize(),
+      "type": "item",
+      "durability": self.durability,
+      "is_door": self.is_door,
+      "is_destroyed": self.is_destroyed
+    }

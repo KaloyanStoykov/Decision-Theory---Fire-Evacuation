@@ -7,7 +7,10 @@ class Tile:
   _image = None
   _fire_state = 1
   
-  def __init__(self, is_traversable, inflammable):
+  def __init__(self, x, y, state_tile: dict, is_traversable, inflammable):
+    self.state_tile = state_tile
+    self.x = x
+    self.y = y
     self.is_traversable = is_traversable
     self.is_inflammable = inflammable
   
@@ -19,16 +22,21 @@ class Tile:
     
     if self._fire_state > FIRE_LAST_STEP:
       self._fire_state= 1
+    
+    self.update_state()
+    
   
   def set_on_fire(self):
     if not self.is_inflammable:
       raise Exception("Tile is not inflammable")
     
     self.is_on_fire = True
+    self.update_state()
         
   def put_out_fire(self):
     self.is_on_fire = False
     self._fire_state = 1
+    self.update_state()
   
   def draw(self, canvas, square_size, x, y):
     canvas.blit(self._image, (x * square_size, y * square_size))
@@ -40,3 +48,15 @@ class Tile:
     scaled_sprite = pygame.transform.scale(sprite_map["fires"][self._fire_state - 1], (square_size, square_size))
     canvas.blit(scaled_sprite, (x * square_size, y * square_size))
     self.increase_fire()
+  
+  def serialize(self):
+    return {
+      "type": "tile",
+      "is_on_fire": self.is_on_fire
+    }
+    
+  def update_state(self):
+    self.state_tile.clear()
+    
+    for key, value in self.serialize().items():
+      self.state_tile[key] = value
