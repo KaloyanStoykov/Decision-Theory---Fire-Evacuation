@@ -4,9 +4,16 @@ from envs.sprites import sprite_map
 from envs.constants import (
     CHANCE_OF_WALL_BEING_WINDOW,
     CHANCE_OF_WALL_BEING_PICTURE,
-    SQUARE_SIZE,
 )
 from envs.utilities import decide_action
+
+
+def is_tile_above_wall(tiles, x, y):
+    return y > 0 and isinstance(tiles[x][y - 1], Wall)
+
+
+def is_tile_below_empty(tiles, x, y):
+    return y == len(tiles) or isinstance(tiles[x][y + 1], Wall)
 
 
 class Wall(Tile):
@@ -15,19 +22,21 @@ class Wall(Tile):
         self._set_image(sprite_map["wall"]["front"])
 
     def register_neighbors(self, tiles: list[list[Tile]]):
-        if self.y > 0 and isinstance(tiles[self.x][self.y + 1], Wall):
+
+        if is_tile_below_empty(tiles, self.x, self.y):
             self._set_image(sprite_map["wall"]["top"])
         else:
             self._set_image(sprite_map["wall"]["front"])
 
-            if decide_action(CHANCE_OF_WALL_BEING_PICTURE):
+            if is_tile_below_empty(tiles, self.x, self.y) and decide_action(
+                CHANCE_OF_WALL_BEING_PICTURE
+            ):
                 self._set_image(sprite_map["picture"])
-                return
-
-            if self.y > len(tiles) - 1 and isinstance(tiles[self.x][self.y - 1], Wall):
-                return
-
-            if decide_action(CHANCE_OF_WALL_BEING_WINDOW):
+            elif (
+                not is_tile_above_wall(tiles, self.x, self.y)
+                and is_tile_below_empty(tiles, self.x, self.y)
+                and decide_action(CHANCE_OF_WALL_BEING_WINDOW)
+            ):
                 self._set_image(sprite_map["window"])
 
     def set_on_fire(self):

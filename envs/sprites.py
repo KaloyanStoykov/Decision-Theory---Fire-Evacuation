@@ -34,8 +34,7 @@ def load_sprite_sheet(filename, rows, cols, size):
             if x + size > sheet_rect.width:
                 continue
 
-            frame = scale(sheet.subsurface(pygame.Rect(x, y, size, size)).copy())
-            row.append(frame)
+            row.append(sheet.subsurface(pygame.Rect(x, y, size, size)).copy())
         if row:
             sprites.append(row)
 
@@ -60,9 +59,12 @@ def load_fire_sprites():
     return fires
 
 
-env_sprites = load_sprite_sheet(
-    "assets/4 BigSet.png", ENV_SPRITE_COLS, ENV_SPRITE_ROWS, 16
-)
+env_sprites = [
+    [scale(sprite) for sprite in sprite_list]
+    for sprite_list in load_sprite_sheet(
+        "assets/4 BigSet.png", ENV_SPRITE_COLS, ENV_SPRITE_ROWS, 16
+    )
+]
 
 
 def display_sheet(sprites, rows, cols):
@@ -157,11 +159,8 @@ def fix_firefighter(sprite):
 
 
 def fix_cat(sprite):
-    PADDING = 16
-    sprite = scale(sprite, SQUARE_SIZE - PADDING)
-    sprite.blit(sprite, (SQUARE_SIZE + PADDING, SQUARE_SIZE + PADDING))
-
-    return sprite
+    PADDING = 34
+    return scale(sprite, SQUARE_SIZE - PADDING)
 
 
 sprite_map = {
@@ -225,7 +224,7 @@ sprite_map = {
         "blue": env_sprites[25][2],
         "purple": env_sprites[25][3],
     },
-    "bin": env_sprites[25][3],
+    "bin": env_sprites[25][4],
     "modern_bin": env_sprites[25][4],
     "carpet": {
         "up": env_sprites[26][1],

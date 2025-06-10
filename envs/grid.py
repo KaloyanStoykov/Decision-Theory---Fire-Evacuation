@@ -20,6 +20,7 @@ class Grid:
         self.create_grid(np_random)
 
     def create_grid(self, np_random):
+        self.np = np_random
         self.tiles: list[list[Tile]] = [
             [None for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)
         ]
@@ -34,10 +35,11 @@ class Grid:
                 [tile for row in self.tiles for tile in row],
             )
         )
-        target_location: Tile = np.random.choice(free_tiles)
+        # target_location: Tile = self.np.choice(free_tiles)
+        target_location = free_tiles[0]
         free_tiles.remove(target_location)
         self.target = Cat(np.array([target_location.x, target_location.y]))
-        agent_location: Tile = np.random.choice(free_tiles)
+        agent_location: Tile = self.np.choice(free_tiles)
         self.agent = FireFighter(np.array([agent_location.x, agent_location.y]))
 
     def _create_walls(self):
@@ -46,7 +48,8 @@ class Grid:
             (1, 2),
             (1, 3),
             (2, 3),
-            (4, 3),
+            (3, 3),
+            (3, 0),
             (3, 1),
         ]
 
@@ -68,7 +71,10 @@ class Grid:
                     )
 
     def _create_items(self):
-        pass
+        self.tiles[0][3] = Item(self.tiles[0][3], Items.BOOKSHELF_FULL)
+        self.tiles[1][0] = Item(self.tiles[1][0], Items.BED_RED)
+        self.tiles[2][0] = Item(self.tiles[2][0], Items.POT_GREEN)
+        # pass
         # floor = self.random_empty_space()
         # if not floor:
         #     return
@@ -82,6 +88,7 @@ class Grid:
         if not self.tiles[next_agent_location[0]][
             next_agent_location[1]
         ].is_traversable:
+            self._update_tiles()
             return False
 
         self.agent.move(next_agent_location)
@@ -89,9 +96,7 @@ class Grid:
         if self.is_agent_dead():
             self.agent.kill()
 
-        for row in self.tiles:
-            for tile in row:
-                tile.update()
+        self._update_tiles()
 
         if decide_action(CHANCE_OF_CATCHING_FIRE):
             tile = random_tile(self.tiles, self.target, self.agent, inflammable=True)
@@ -104,6 +109,11 @@ class Grid:
                 tile.put_out_fire()
 
         return True
+
+    def _update_tiles(self):
+        for row in self.tiles:
+            for tile in row:
+                tile.update()
 
     def get_possible_actions(self):
         possible_actions = np.ones(len(Action), dtype=bool)

@@ -1,7 +1,7 @@
 from envs.sprites import *
 
 if __name__ == "__main__":
-    # test_sprite(sprite_map["window"])
-    display_sheet(env_sprites, ENV_SPRITE_ROWS, ENV_SPRITE_COLS)
+    test_sprite(sprite_map["bin"])
+    # display_sheet(env_sprites, ENV_SPRITE_ROWS, ENV_SPRITE_COLS)
     # display_sheet(fire_fighter_idle_sprites, 1, 6, 100)
     # test_sprite(sprite_map["cat"][0], 32)

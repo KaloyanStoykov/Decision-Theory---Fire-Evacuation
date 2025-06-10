@@ -17,24 +17,15 @@ class FireFighterWorld(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
 
     def __init__(self, render_mode=None, size=5):
+        self.metadata["render_fps"] = 4 if render_mode == "human" else 400
         self.grid = Grid(self.np_random)
         self.points = INITIAL_POINTS
         self.canvas = pygame.Surface((WINDOW_SIZE, WINDOW_SIZE))
         self.canvas.fill((255, 255, 255))
 
         self.observation_space = spaces.Tuple(
-            (
-                spaces.Box(0, size - 1, shape=(2,), dtype=int),  # agent
-                spaces.Box(0, size - 1, shape=(2,), dtype=int),  # target
-                # "tiles": self.grid.tiles,
-                spaces.Discrete(
-                    int(
-                        np.linalg.norm(
-                            np.array([0, 0]) - np.array([size - 1, size - 1]), ord=1
-                        )
-                    )
-                ),  # distance
-            )
+            # (spaces.Box(0, size - 1, shape=(2,), dtype=int),)  # agent
+            (spaces.Discrete(size), spaces.Discrete(size))  # agent
         )
 
         self.action_space = spaces.Discrete(4)
@@ -53,17 +44,12 @@ class FireFighterWorld(gym.Env):
             pygame.display.init()
             self.window = pygame.display.set_mode((WINDOW_SIZE, WINDOW_SIZE))
             self.clock = pygame.time.Clock()
+        else:
+            self.window = None
+            self.clock = None
 
     def _get_obs(self):
-        return (
-            self.grid.agent.location,
-            self.grid.target.location,
-            int(
-                np.linalg.norm(
-                    self.grid.agent.location - self.grid.target.location, ord=1
-                )
-            ),
-        )
+        return (self.grid.agent.x, self.grid.agent.y)
 
     def _get_info(self):
         return {}
@@ -104,7 +90,7 @@ class FireFighterWorld(gym.Env):
         if self.render_mode == "human":
             self._render_frame()
 
-        return self._get_obs(), reward, terminated, self._get_info()
+        return self._get_obs(), reward, terminated, False, self._get_info()
 
     def render(self):
         if self.render_mode == "rgb_array":

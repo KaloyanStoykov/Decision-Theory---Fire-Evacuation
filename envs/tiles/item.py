@@ -56,12 +56,12 @@ def durability_and_image_for_item(item_type: Items):
             return (1, sprite_map["bed"]["purple"])
         case Items.NIGHTSTAND:
             return (8, sprite_map["nightstand"])
-        case Items.DOOR:
-            return (2, sprite_map["door"])
+        # case Items.DOOR:
+        #     return (2, sprite_map["door"])
+        # case Items.TRAPDOOR:
+        #     return (1, sprite_map["trapdoor"]["closed"])
         case Items.DOOR_OPEN:
             return (2, sprite_map["door_open"])
-        case Items.TRAPDOOR:
-            return (1, sprite_map["trapdoor"]["closed"])
         case Items.TRAPDOOR_OPEN:
             return (1, sprite_map["trapdoor"]["open"])
         case Items.BIN:
@@ -89,7 +89,8 @@ class Item(Tile):
         self._floor = floor
         # self.is_door = is_door(type)
         self.is_breakable = True
-        self.is_inflammable = True
+        # self.is_inflammable = True
+        self.is_inflammable = False
 
         (durability, image) = durability_and_image_for_item(type)
         self.durability = durability * DURABILITY_POWER
