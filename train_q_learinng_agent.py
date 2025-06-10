@@ -19,6 +19,7 @@ def run():
         observation = next_observation
 
         if terminated:
+            agent.decay_epsilon()
             observation, _ = env.reset()
 
     env.close()
@@ -29,4 +30,6 @@ if __name__ == "__main__":
     try:
         run()
     except KeyboardInterrupt:
+        print("Training interrupted")
+        agent.save()
         pass

@@ -1,19 +1,22 @@
-import os
 import matplotlib.pyplot as plt
+import os
 from collections import defaultdict
 import gymnasium as gym
 import numpy as np
 from envs.constants import Action, Observation, GRID_SIZE
+from q_learning.debug import Visualizer
 
 # from constants import DISCOUNT_FACTOR, LEARNING_RATE, EPSILON_DECAY, FINAL_EPSILON
 
 N_EPISODES = 100_000
 START_EPSILON = 1.0
-LEARNING_RATE = 0.01
+LEARNING_RATE = 0.1
 INITIAL_EPSILON = START_EPSILON
-EPSILON_DECAY = (START_EPSILON / (N_EPISODES / 2),)  # reduce the exploration over time
-FINAL_EPSILON = (0.1,)
+EPSILON_DECAY = START_EPSILON / (N_EPISODES / 2)  # reduce the exploration over time
+FINAL_EPSILON = 0.1
 DISCOUNT_FACTOR = 0.95
+
+visualizer = Visualizer(grid_shape=(GRID_SIZE, GRID_SIZE), num_actions=len(Action))
 
 
 def encode_observation(observation):
@@ -58,29 +61,12 @@ class Agent:
         self.q_table[encode_observation(obs)][action] = (
             q_value + LEARNING_RATE * temporal_difference
         )
+
         self.training_error.append(temporal_difference)
-
         if len(self.training_error) % 10 == 0:
-            self.update_plot()
-
-    def update_plot(self):
-        if not self.error_plot_initialized:
-            plt.ion()
-            self.fig, self.ax = plt.subplots()
-            (self.line,) = self.ax.plot(self.training_error, label="TD Error")
-            self.ax.set_xlabel("Step")
-            self.ax.set_ylabel("Error")
-            self.ax.set_title("TD Error (Live)")
-            self.ax.legend()
-            self.ax.grid(True)
-            self.error_plot_initialized = True
-        else:
-            self.line.set_ydata(self.training_error)
-            self.line.set_xdata(range(len(self.training_error)))
-            self.ax.relim()
-            self.ax.autoscale_view()
-            self.fig.canvas.draw()
-            self.fig.canvas.flush_events()
+            visualizer.update(
+                q_table=self.q_table, epsilon=self.epsilon, td_error=temporal_difference
+            )
 
     def decay_epsilon(self):
         self.epsilon = max(FINAL_EPSILON, self.epsilon - EPSILON_DECAY)

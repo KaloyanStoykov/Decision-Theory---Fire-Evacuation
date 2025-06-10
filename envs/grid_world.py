@@ -10,14 +10,14 @@ from envs.constants import (
     INITIAL_POINTS,
     ILLEAGAL_MOVE_PUNISHMENT,
     DEATH_PUNISHMENT,
+    FPS,
 )
 
 
 class FireFighterWorld(gym.Env):
-    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
+    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": FPS}
 
     def __init__(self, render_mode=None, size=5):
-        self.metadata["render_fps"] = 4 if render_mode == "human" else 400
         self.grid = Grid(self.np_random)
         self.points = INITIAL_POINTS
         self.canvas = pygame.Surface((WINDOW_SIZE, WINDOW_SIZE))
@@ -25,7 +25,7 @@ class FireFighterWorld(gym.Env):
 
         self.observation_space = spaces.Tuple(
             # (spaces.Box(0, size - 1, shape=(2,), dtype=int),)  # agent
-            (spaces.Discrete(size), spaces.Discrete(size))  # agent
+            (spaces.Discrete(size + 1), spaces.Discrete(size + 1))  # agent
         )
 
         self.action_space = spaces.Discrete(4)
@@ -93,12 +93,14 @@ class FireFighterWorld(gym.Env):
         return self._get_obs(), reward, terminated, False, self._get_info()
 
     def render(self):
-        if self.render_mode == "rgb_array":
-            if self.grid.is_agent_dead():
-                while self.grid.agent._anim_state != 0:
-                    self._render_frame()
-            else:
+        if self.render_mode != "human":
+            return
+
+        if self.grid.is_agent_dead():
+            while self.grid.agent._anim_state != 0:
                 self._render_frame()
+        else:
+            self._render_frame()
 
     def _render_frame(self):
         self.grid.draw(self.canvas)
