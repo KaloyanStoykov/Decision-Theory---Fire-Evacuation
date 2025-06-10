@@ -31,7 +31,11 @@ def get_sprite_from_borders(sprite_map: dict, borders: list[Side]):
         raise Exception(f"Floor with category '{category_name}' not found")
 
     if len(categories) == 2:
-        return sprite_map[category_name]["without_middle"]
+        return (
+            sprite_map[category_name]
+            if not isinstance(sprite_map[category_name], dict)
+            else sprite_map[category_name]["without_middle"]
+        )
 
     return sprite_map[category_name]
 

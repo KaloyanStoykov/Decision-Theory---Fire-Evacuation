@@ -20,13 +20,6 @@ class Grid:
         self.create_grid(np_random)
 
     def create_grid(self, np_random):
-        self.agent = FireFighter(np_random.integers(0, GRID_SIZE, size=2, dtype=int))
-        target_location = self.agent.location
-        while np.array_equal(target_location, self.agent.location):
-            target_location = np_random.integers(0, GRID_SIZE, size=2, dtype=int)
-
-        self.target = Cat(target_location)
-
         self.tiles: list[list[Tile]] = [
             [None for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)
         ]
@@ -35,11 +28,23 @@ class Grid:
         self._lay_floors()
         self._create_items()
 
+        free_tiles: list[Tile] = list(
+            filter(
+                lambda tile: tile.is_traversable,
+                [tile for row in self.tiles for tile in row],
+            )
+        )
+        target_location: Tile = np.random.choice(free_tiles)
+        free_tiles.remove(target_location)
+        self.target = Cat(np.array([target_location.x, target_location.y]))
+        agent_location: Tile = np.random.choice(free_tiles)
+        self.agent = FireFighter(np.array([agent_location.x, agent_location.y]))
+
     def _create_walls(self):
         positions = [
-            (4, 1),
-            (4, 2),
-            (3, 2),
+            (0, 2),
+            (1, 2),
+            (1, 3),
             (2, 3),
             (4, 3),
             (3, 1),
@@ -63,11 +68,12 @@ class Grid:
                     )
 
     def _create_items(self):
-        floor = self.random_empty_space()
-        if not floor:
-            return
+        pass
+        # floor = self.random_empty_space()
+        # if not floor:
+        #     return
 
-        self.tiles[floor.x][floor.y] = Item(floor, Items.RADIO)
+        # self.tiles[floor.x][floor.y] = Item(floor, Items.RADIO)
 
     def is_agent_dead(self):
         return self.tiles[self.agent.x][self.agent.y].is_on_fire

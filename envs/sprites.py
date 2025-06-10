@@ -284,10 +284,3 @@ for x in range(w):
         c = sprite_map["wall"]["front"].get_at((x, 0))
         sprite_map["picture"].set_at((x, y), c)
         sprite_map["window"].set_at((x, y), c)
-
-
-if __name__ == "__main__":
-    # test_sprite(sprite_map["window"])
-    display_sheet(env_sprites, ENV_SPRITE_ROWS, ENV_SPRITE_COLS, 16)
-    # display_sheet(fire_fighter_idle_sprites, 1, 6, 100)
-    # test_sprite(sprite_map["cat"][0], 32)
