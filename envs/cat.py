@@ -1,24 +1,19 @@
+import numpy as np
 from envs.sprites import sprite_map
-from envs.constants import SQUARE_SIZE
-from enum import Enum
-import pygame
+from envs.tiles.base import Base
 
-PADDING = 16
+STATE_COUNT = len(sprite_map["cat"])
 
-class Cat:
-  def __init__(self, size):
-    self.size = size
-    self.anim_state = 0
-    self.update()
-  
-  def update(self):
-    self.anim_state = (self.anim_state + 1) % 4
-    self.set_image(sprite_map["cat"][self.anim_state])
 
-  def set_image(self, image):
-    self._image = pygame.transform.scale(image, (self.size - PADDING, self.size - PADDING))
+class Cat(Base):
+    _anim_state = 0
 
-  def draw(self, canvas, x, y):
-    self.update()
-    canvas.blit(self._image, (x * self.size + PADDING, y * self.size + PADDING))
-    
+    def __init__(self, location: np.ndarray):
+        x, y = location
+        super().__init__(x, y)
+        self.location = location
+
+    def draw(self, canvas):
+        self._anim_state = (self._anim_state + 1) % STATE_COUNT
+        self._set_image(sprite_map["cat"][self._anim_state])
+        super().draw(canvas)

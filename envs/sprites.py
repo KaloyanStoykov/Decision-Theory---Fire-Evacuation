@@ -1,15 +1,25 @@
 import pygame
+from envs.constants import SQUARE_SIZE
 
 # 8x28
 # 128x432
-SPRITE_SIZE = 16
 ENV_SPRITE_ROWS = 27
 ENV_SPRITE_COLS = 8
 PADDING = 0
 
+
+def scale(sprite, size=SQUARE_SIZE):
+    return pygame.transform.scale(sprite, (size, size))
+
+
 def load_sprite_sheet(filename, rows, cols, size):
     pygame.init()
-    pygame.display.set_mode((cols * (size + PADDING) + PADDING, rows * (size + PADDING) + PADDING))
+    pygame.display.set_mode(
+        (
+            cols * (size + PADDING) + PADDING,
+            rows * (size + PADDING) + PADDING,
+        )
+    )
 
     sheet = pygame.image.load(filename).convert_alpha()
     sheet_rect = sheet.get_rect()
@@ -18,19 +28,20 @@ def load_sprite_sheet(filename, rows, cols, size):
     for y in range(0, sheet_rect.height, size):
         if y + size > sheet_rect.height:
             continue
-        
+
         row = []
         for x in range(0, sheet_rect.width, size):
             if x + size > sheet_rect.width:
                 continue
-            
-            frame = sheet.subsurface(pygame.Rect(x, y, size, size)).copy()
+
+            frame = scale(sheet.subsurface(pygame.Rect(x, y, size, size)).copy())
             row.append(frame)
         if row:
             sprites.append(row)
-    
+
     pygame.quit()
     return sprites
+
 
 def load_fire_sprites():
     fires = []
@@ -40,17 +51,28 @@ def load_fire_sprites():
         sheet = pygame.image.load("assets/Fogo_" + str(i) + ".png").convert_alpha()
         piece = 1024 / 28
         offset = piece * 16
-        frame = sheet.subsurface(pygame.Rect(offset, offset, piece * 4, piece * 4)).copy()
+        frame = scale(
+            sheet.subsurface(pygame.Rect(offset, offset, piece * 4, piece * 4)).copy()
+        )
         fires.append(frame)
 
     pygame.quit()
     return fires
-    
-env_sprites = load_sprite_sheet("assets/4 BigSet.png", ENV_SPRITE_COLS, ENV_SPRITE_ROWS, SPRITE_SIZE)
 
-def display_sheet(sprites, rows, cols, sprite_size):
+
+env_sprites = load_sprite_sheet(
+    "assets/4 BigSet.png", ENV_SPRITE_COLS, ENV_SPRITE_ROWS, 16
+)
+
+
+def display_sheet(sprites, rows, cols):
     pygame.init()
-    screen = pygame.display.set_mode((cols * (PADDING + sprite_size) + PADDING, rows * (PADDING + sprite_size) + PADDING))
+    screen = pygame.display.set_mode(
+        (
+            cols * (PADDING + SQUARE_SIZE) + PADDING,
+            rows * (PADDING + SQUARE_SIZE) + PADDING,
+        )
+    )
     clock = pygame.time.Clock()
 
     running = True
@@ -60,7 +82,7 @@ def display_sheet(sprites, rows, cols, sprite_size):
                 running = False
 
         screen.fill((255, 255, 255))
-        tile_size = sprite_size + PADDING # space between sprites (padding)
+        tile_size = SQUARE_SIZE + PADDING  # space between sprites (padding)
 
         for row in range(rows):
             for col in range(cols):
@@ -73,9 +95,10 @@ def display_sheet(sprites, rows, cols, sprite_size):
 
     pygame.quit()
 
+
 def test_sprite(sprite, size):
     pygame.init()
-    screen = pygame.display.set_mode(( 2 * PADDING + size, 2 * PADDING + size))
+    screen = pygame.display.set_mode((2 * PADDING + size, 2 * PADDING + size))
     clock = pygame.time.Clock()
 
     running = True
@@ -90,7 +113,8 @@ def test_sprite(sprite, size):
         pygame.display.flip()
         clock.tick(160)
 
-    pygame.quit()    
+    pygame.quit()
+
 
 def fix_firefighter(sprite):
     size = 24
@@ -103,10 +127,24 @@ def fix_firefighter(sprite):
         g = int(hex_color[2:4], 16)
         b = int(hex_color[4:6], 16)
         return (r, g, b, 255)
-    
-    colors_to_replace = [(hex_to_rgba(old), hex_to_rgba(new)) for old, new in [("#607581", "#672020"), ("#C2CDD2", "#8F3838"), ("#9BADB7", "#672020"), ("#C5D0D5", "#8F3838"), ("#425C6B", "#561D1D"), ("#5D6C75", "#561D1D"), ("#6F828D", "#511D1D"), ("#7F909A", "#511D1D"), ("#7B4E16", "#B19E9A"), ("##8D6534", "#B19E9A")]]
 
-    firefigther = sprite.subsurface(pygame.Rect(x, y, size, size)).copy()
+    colors_to_replace = [
+        (hex_to_rgba(old), hex_to_rgba(new))
+        for old, new in [
+            ("#607581", "#672020"),
+            ("#C2CDD2", "#8F3838"),
+            ("#9BADB7", "#672020"),
+            ("#C5D0D5", "#8F3838"),
+            ("#425C6B", "#561D1D"),
+            ("#5D6C75", "#561D1D"),
+            ("#6F828D", "#511D1D"),
+            ("#7F909A", "#511D1D"),
+            ("#7B4E16", "#B19E9A"),
+            ("##8D6534", "#B19E9A"),
+        ]
+    ]
+
+    firefigther = scale(sprite.subsurface(pygame.Rect(x, y, size, size)).copy())
 
     width, height = firefigther.get_size()
     for x in range(width):
@@ -117,23 +155,33 @@ def fix_firefighter(sprite):
 
     return firefigther
 
-def fix_cat(sprite):
-    # new_size = 16
-    # scaled = pygame.transform.scale(sprite, (new_size, new_size))
-    # tile = pygame.Surface((SPRITE_SIZE, SPRITE_SIZE), pygame.SRCALPHA)
-    # offset = (SPRITE_SIZE - new_size) // 2
-    # tile.blit(scaled, (offset, offset))
 
-    # return tile
+def fix_cat(sprite):
+    PADDING = 16
+    sprite = scale(sprite, SQUARE_SIZE - PADDING)
+    sprite.blit(sprite, (SQUARE_SIZE + PADDING, SQUARE_SIZE + PADDING))
+
     return sprite
-  
+
+
 sprite_map = {
     "fires": load_fire_sprites(),
     "firefighter": {
-        "idle": [fix_firefighter(sprite) for sprite in load_sprite_sheet("assets/Soldier-Idle.png", 1, 6, 100)[0]],
-        "dying": [fix_firefighter(sprite) for sprite in (load_sprite_sheet("assets/Soldier-Hurt.png", 1, 3, 100)[0] + load_sprite_sheet("assets/Soldier-Death.png", 1, 4, 100)[0])],
+        "idle": [
+            fix_firefighter(sprite)
+            for sprite in load_sprite_sheet("assets/Soldier-Idle.png", 1, 6, 100)[0]
+        ],
+        "dying": [
+            fix_firefighter(sprite)
+            for sprite in (
+                load_sprite_sheet("assets/Soldier-Hurt.png", 1, 3, 100)[0]
+                + load_sprite_sheet("assets/Soldier-Death.png", 1, 4, 100)[0]
+            )
+        ],
     },
-    "cat": [fix_cat(sprite) for sprite in load_sprite_sheet("assets/cat.png", 1, 4, 32)[0]],
+    "cat": [
+        fix_cat(sprite) for sprite in load_sprite_sheet("assets/cat.png", 1, 4, 32)[0]
+    ],
     "wall": {
         "front": env_sprites[20][3],
         "top": env_sprites[19][3],
@@ -145,12 +193,9 @@ sprite_map = {
     "bed": {
         "red": env_sprites[23][0],
         "blue": env_sprites[23][1],
-        "purple": env_sprites[23][2]
+        "purple": env_sprites[23][2],
     },
-    "bookshelf": {
-        "full": env_sprites[23][3],
-        "empty": env_sprites[23][4]
-    },
+    "bookshelf": {"full": env_sprites[23][3], "empty": env_sprites[23][4]},
     "trap-doo": {
         "closed": env_sprites[22][0],
         "open": env_sprites[22][1],
@@ -178,59 +223,71 @@ sprite_map = {
         "empty": env_sprites[25][0],
         "red": env_sprites[25][1],
         "blue": env_sprites[25][2],
-        "purple": env_sprites[25][3]
+        "purple": env_sprites[25][3],
     },
     "bin": env_sprites[25][3],
     "modern_bin": env_sprites[25][4],
     "carpet": {
         "up": env_sprites[26][1],
         "middle": env_sprites[26][2],
-        "down": env_sprites[26][3]
+        "down": env_sprites[26][3],
     },
-    "oven": env_sprites[26][4]
+    "oven": env_sprites[26][4],
 }
 
 for color_i, color in enumerate(["red", "blue", "purple"]):
-  map = {}
-  color_i *= 6
-  
-  # order is top, bottom, right, left
-  for row, side in enumerate(["top", "middle", "bottom"]):
-    for col, direction in enumerate(["left", "center", "right"]):
-      map[side + "_" + direction] = {
-        "without_middle": env_sprites[color_i + row][col],
-        "with_middle": env_sprites[color_i + row][col + 3],
-        "without_border": env_sprites[color_i + row + 3][col],
-      }
-  
-  map["top_right_left"] = env_sprites[color_i + 3][3]
-  map["right_left"] = env_sprites[color_i + 4][3]
-  map["bottom_right_left"] = env_sprites[color_i + 5][3]
+    map = {}
+    color_i *= 6
 
-  map["top_bottom_left"] = env_sprites[color_i + 5][4]
-  map["top_bottom"] = env_sprites[color_i + 5][5]
-  map["top_bottom_right"] = env_sprites[color_i + 5][6]
+    # order is top, bottom, right, left
+    for row, side in enumerate(["top", "middle", "bottom"]):
+        for col, direction in enumerate(["left", "center", "right"]):
+            map[side + "_" + direction] = {
+                "without_middle": env_sprites[color_i + row][col],
+                "with_middle": env_sprites[color_i + row][col + 3],
+                "without_border": env_sprites[color_i + row + 3][col],
+            }
 
-  map["top_bottom_right_left"] = env_sprites[color_i + 5][7]
-  
-  sprite_map[color + "_carpet"] = map
+    map["top_right_left"] = env_sprites[color_i + 3][3]
+    map["right_left"] = env_sprites[color_i + 4][3]
+    map["bottom_right_left"] = env_sprites[color_i + 5][3]
+
+    map["top_bottom_left"] = env_sprites[color_i + 5][4]
+    map["top_bottom"] = env_sprites[color_i + 5][5]
+    map["top_bottom_right"] = env_sprites[color_i + 5][6]
+
+    map["top_bottom_right_left"] = env_sprites[color_i + 5][7]
+
+    sprite_map[color + "_carpet"] = map
 
 # fix top wall black strips
-w = sprite_map["wall"]["top"].get_width()
-for y in range(sprite_map["wall"]["top"].get_height()):
-    sprite_map["wall"]["top"].set_at((0, y), sprite_map["wall"]["top"].get_at((1, y)))
-    sprite_map["wall"]["top"].set_at((w-1, y), sprite_map["wall"]["top"].get_at((w-2, y)))
-    sprite_map["wall"]["front"].set_at((0, y), sprite_map["wall"]["front"].get_at((1, y)))
-    sprite_map["wall"]["front"].set_at((w-1, y), sprite_map["wall"]["front"].get_at((w-2, y)))
+w = scale(sprite_map["wall"]["top"]).get_width()
+WALL_PADDING = 7
+for y in range(SQUARE_SIZE):
+    for x in range(WALL_PADDING):
+        sprite_map["wall"]["top"].set_at(
+            (x, y), sprite_map["wall"]["top"].get_at((WALL_PADDING, y))
+        )
+        sprite_map["wall"]["top"].set_at(
+            (w - 1 - x, y), sprite_map["wall"]["top"].get_at((w - WALL_PADDING - 2, y))
+        )
+        sprite_map["wall"]["front"].set_at(
+            (x, y), sprite_map["wall"]["front"].get_at((WALL_PADDING, y))
+        )
+        sprite_map["wall"]["front"].set_at(
+            (w - 1 - x, y),
+            sprite_map["wall"]["front"].get_at((w - WALL_PADDING - 2, y)),
+        )
 
 for x in range(w):
-    c = sprite_map["picture"].get_at((x, 1))
-    sprite_map["picture"].set_at((x, 0), c)
-    sprite_map["window"].set_at((x, 0), c)
+    for y in range(WALL_PADDING):
+        c = sprite_map["wall"]["front"].get_at((x, 0))
+        sprite_map["picture"].set_at((x, y), c)
+        sprite_map["window"].set_at((x, y), c)
 
 
 if __name__ == "__main__":
     # test_sprite(sprite_map["window"])
-    # display_sheet(env_sprites, ENV_SPRITE_ROWS, ENV_SPRITE_COLS, 16)
+    display_sheet(env_sprites, ENV_SPRITE_ROWS, ENV_SPRITE_COLS, 16)
     # display_sheet(fire_fighter_idle_sprites, 1, 6, 100)
-    test_sprite(sprite_map["cat"][0], 32)
+    # test_sprite(sprite_map["cat"][0], 32)

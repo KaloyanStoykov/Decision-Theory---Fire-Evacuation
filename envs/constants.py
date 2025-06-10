@@ -1,36 +1,47 @@
 from enum import Enum
 
-SQUARE_SIZE = 16
-DURABILITY_POWER = 5
-FIRE_LAST_STEP = 4
+GRID_SIZE = 5
+WINDOW_SIZE = 512
+SQUARE_SIZE = int(WINDOW_SIZE / GRID_SIZE)
+DURABILITY_POWER = 1
 FIRE_SIZE_ON_OBJECT = 0.6
-CHANCE_OF_CATCHING_FIRE = 0.8
+CHANCE_OF_CATCHING_FIRE = 0.04
 CHANCE_OF_SELF_EXTINGUISH = 0.004
 CHANCE_OF_WALL_BEING_WINDOW = 0.1
 CHANCE_OF_WALL_BEING_PICTURE = 0.1
 
+INITIAL_POINTS = 1000
+ITEM_DAMAGE_PUNISHMENT = 10
+TIME_STEP_PUNISHMENT = 1
+DEATH_PUNISHMENT = -10
+ILLEAGAL_MOVE_PUNISHMENT = -10
+
+
 class Side(Enum):
-  TOP = 0
-  RIGHT = 1
-  BOTTOM = 2
-  LEFT = 3
-  
+    TOP = 0
+    RIGHT = 1
+    BOTTOM = 2
+    LEFT = 3
+
+
 class FloorPosition(Enum):
-  TOP_LEFT = 0
-  TOP_CENTER = 1
-  TOP_RIGHT = 2
-  MIDDLE_LEFT = 3
-  MIDDLE_CENTER = 4
-  MIDDLE_RIGHT = 5
-  BOTTOM_LEFT = 6
-  BOTTOM_CENTER = 7
-  BOTTOM_RIGHT = 8
-  
+    TOP_LEFT = 0
+    TOP_CENTER = 1
+    TOP_RIGHT = 2
+    MIDDLE_LEFT = 3
+    MIDDLE_CENTER = 4
+    MIDDLE_RIGHT = 5
+    BOTTOM_LEFT = 6
+    BOTTOM_CENTER = 7
+    BOTTOM_RIGHT = 8
+
+
 class FloorType(Enum):
-  TILE = 0
-  RED = 1
-  BLUE = 2
-  PURPLE = 3
+    TILE = 0
+    RED = 1
+    BLUE = 2
+    PURPLE = 3
+
 
 class Items(Enum):
     WINDOW = 0
@@ -42,7 +53,7 @@ class Items(Enum):
     CHAIR = 6
     CHAIR_RED = 7
     CHAIR_BLUE = 8
-    CHAIR_PURPLE = 9 
+    CHAIR_PURPLE = 9
     OVEN = 10
     TOILET = 11
     POT = 12
@@ -50,8 +61,8 @@ class Items(Enum):
     STOOL = 14
     DOOR_OPEN = 15
     NIGHTSTAND = 16
-    DOOR = 17
-    TRAPDOOR = 18
+    # DOOR = 17
+    # TRAPDOOR = 18
     TRAPDOOR_OPEN = 19
     BIN = 20
     MODERN_BIN = 21
@@ -69,7 +80,4 @@ class Action(Enum):
     UP = 1
     LEFT = 2
     DOWN = 3
-    PICK_PERSON = 4
-    BREAK_DOOR = 5
-    PUT_OUT_FIRE = 6
-    
+    PUT_OUT_FIRE = 4

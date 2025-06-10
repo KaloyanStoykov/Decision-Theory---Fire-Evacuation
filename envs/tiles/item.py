@@ -1,142 +1,131 @@
 import pygame
 from envs.tiles.floor import Floor
 from envs.tiles.tile import Tile
-from envs.constants import Items, FIRE_LAST_STEP, DURABILITY_POWER, FIRE_SIZE_ON_OBJECT
+from envs.constants import (
+    Items,
+    DURABILITY_POWER,
+    FIRE_SIZE_ON_OBJECT,
+    SQUARE_SIZE,
+)
 from envs.sprites import sprite_map
 
+FIRE_STATE_COUNT = len(sprite_map["fires"])
+
+
+def durability_and_image_for_item(item_type: Items):
+    match item_type:
+        case Items.RADIO:
+            return (9, sprite_map["radio"])
+        case Items.BOOKSHELF_EMPTY:
+            return (1, sprite_map["bookshelf"]["empty"])
+        case Items.BOOKSHELF_FULL:
+            return (1, sprite_map["bookshelf"]["full"])
+        case Items.TABLE:
+            return (1, sprite_map["table"]["big"])
+        case Items.TABLE_SMALL:
+            return (8, sprite_map["table"]["small"])
+        case Items.CHAIR:
+            return (6, sprite_map["chair"]["empty"])
+        case Items.CHAIR_BLUE:
+            return (6, sprite_map["chair"]["blue"])
+        case Items.CHAIR_PURPLE:
+            return (6, sprite_map["chair"]["purple"])
+        case Items.CHAIR_RED:
+            return (6, sprite_map["chair"]["red"])
+        case Items.OVEN:
+            return (1, sprite_map["oven"])
+        case Items.TOILET:
+            return (1, sprite_map["toilet"])
+        case Items.POT:
+            return (5, sprite_map["pot"]["empty"])
+        case Items.POT_GREEN:
+            return (5, sprite_map["pot"]["green"])
+        case Items.POT_PINK:
+            return (5, sprite_map["pot"]["pink"])
+        case Items.POT_RED:
+            return (5, sprite_map["pot"]["red"])
+        case Items.CHEST:
+            return (1, sprite_map["chest"])
+        case Items.STOOL:
+            return (4, sprite_map["stool"])
+        case Items.BED_BLUE:
+            return (1, sprite_map["bed"]["blue"])
+        case Items.BED_RED:
+            return (1, sprite_map["bed"]["red"])
+        case Items.BED_PURPLE:
+            return (1, sprite_map["bed"]["purple"])
+        case Items.NIGHTSTAND:
+            return (8, sprite_map["nightstand"])
+        case Items.DOOR:
+            return (2, sprite_map["door"])
+        case Items.DOOR_OPEN:
+            return (2, sprite_map["door_open"])
+        case Items.TRAPDOOR:
+            return (1, sprite_map["trapdoor"]["closed"])
+        case Items.TRAPDOOR_OPEN:
+            return (1, sprite_map["trapdoor"]["open"])
+        case Items.BIN:
+            return (7, sprite_map["bin"])
+        case Items.MODERN_BIN:
+            return (9, sprite_map["modern-bin"])
+        case _:
+            raise Exception(f"Item with type {item_type} not found")
+
+
+# def is_door(item_type: Items):
+#     return (
+#         item_type == Items.DOOR
+#         or item_type == Items.TRAPDOOR
+#         or item_type == Items.TRAPDOOR_OPEN
+#         or item_type == Items.DOOR_OPEN
+#     )
+
+
 class Item(Tile):
-  durability = 10
-  is_destroyed = False
-    
-  def __init__(self, x: int, y: int, state_tile, type: Items, floor: Floor, size: int):
-    super().__init__(x, y, state_tile, False, True)
-    self.floor = floor
-    image = None
-    
-    match type:
-      case Items.RADIO:
-        self.durability = 9
-        image = sprite_map["radio"]
-      case Items.BOOKSHELF_EMPTY:
-        self.durability = 12
-        image = sprite_map["bookshelf"]["empty"]
-      case Items.BOOKSHELF_FULL:
-        self.durability = 14
-        image = sprite_map["bookshelf"]["full"]
-      case Items.TABLE:
-        self.durability = 10
-        image = sprite_map["table"]["big"]
-      case Items.TABLE_SMALL:
-        self.durability = 8
-        image = sprite_map["table"]["small"]
-      case Items.CHAIR:
-        self.durability = 6
-        image = sprite_map["chair"]["empty"]
-      case Items.CHAIR_BLUE:
-        self.durability = 6
-        image = sprite_map["chair"]["blue"]
-      case Items.CHAIR_PURPLE:
-        self.durability = 6
-        image = sprite_map["chair"]["purple"]
-      case Items.CHAIR_RED:
-        self.durability = 6
-        image = sprite_map["chair"]["red"]
-      case Items.OVEN:
-        self.durability = 18
-        image = sprite_map["oven"]
-      case Items.TOILET:
-        self.durability = 15
-        image = sprite_map["toilet"]
-      case Items.POT:
-        self.durability = 5
-        image = sprite_map["pot"]["empty"]
-      case Items.POT_GREEN:
-        self.durability = 5
-        image = sprite_map["pot"]["green"]
-      case Items.POT_PINK:
-        self.durability = 5
-        image = sprite_map["pot"]["pink"]
-      case Items.POT_RED:
-        self.durability = 5
-        image = sprite_map["pot"]["red"]
-      case Items.CHEST:
-        self.durability = 16
-        image = sprite_map["chest"]
-      case Items.STOOL:
-        self.durability = 4
-        image = sprite_map["stool"]
-      case Items.BED_BLUE:
-        self.durability = 13
-        image = sprite_map["bed"]["blue"]
-      case Items.BED_RED:
-        self.durability = 13
-        image = sprite_map["bed"]["red"]
-      case Items.BED_PURPLE:
-        self.durability = 13
-        image = sprite_map["bed"]["purple"]
-      case Items.NIGHTSTAND:
-        self.durability = 8
-        image = sprite_map["nightstand"]
-      case Items.DOOR:
-        self.durability = 20
-        image = sprite_map["door"]
-      case Items.DOOR_OPEN:
-        self.durability = 20
-        image = sprite_map["door_open"]
-      case Items.TRAPDOOR:
-        self.durability = 12
-        image = sprite_map["trapdoor"]["closed"]
-      case Items.TRAPDOOR_OPEN:
-        self.durability = 12
-        image = sprite_map["trapdoor"]["open"]
-      case Items.BIN:
-        self.durability = 7
-        image = sprite_map["bin"]
-      case Items.MODERN_BIN:
-        self.durability = 9
-        image = sprite_map["modern-bin"]
-   
-    self.set_image(image, size)
-    self.durability *= DURABILITY_POWER
-    self.is_door = type == Items.DOOR or type == Items.TRAPDOOR or type == Items.TRAPDOOR_OPEN or type == Items.DOOR_OPEN
-    self.update_state()
-    
-  def damage(self):
-    self.durability -= 1
+    is_destroyed = False
 
-    if self.durability == 0:
-      self.is_destroyed = True
-    
-    self.update_state()
+    def __init__(self, floor: Floor, type: Items):
+        super().__init__(floor.x, floor.y)
+        self._floor = floor
+        # self.is_door = is_door(type)
+        self.is_breakable = True
+        self.is_inflammable = True
 
-  def increase_fire(self):
-    if self._fire_state == FIRE_LAST_STEP:
-      self.damage()
-      
-      if self.is_destroyed:
-        self.floor.set_on_fire()
-    
-    return super().increase_fire()
+        (durability, image) = durability_and_image_for_item(type)
+        self.durability = durability * DURABILITY_POWER
+        self._set_image(image)
 
-  def draw(self, canvas, square_size, x, y):
-    self.floor.draw(canvas, square_size, x, y)
-    
-    if not self.is_destroyed:
-      super().draw(canvas, square_size, x, y)
+    def damage(self):
+        self.durability -= 1
 
-  def draw_fire(self, canvas, square_size, x, y):
-    if self.is_destroyed:
-      return super().draw_fire(canvas, square_size, x, y)
+        if self.durability == 0:
+            self.is_destroyed = True
 
-    scaled_sprite = pygame.transform.scale(sprite_map["fires"][self._fire_state - 1], (square_size * FIRE_SIZE_ON_OBJECT, square_size * FIRE_SIZE_ON_OBJECT))
-    canvas.blit(scaled_sprite, (x * square_size + square_size * (1 - FIRE_SIZE_ON_OBJECT) / 2, y * square_size + square_size * (1 - FIRE_SIZE_ON_OBJECT)))
-    self.increase_fire()
-  
-  def serialize(self):
-    return {
-      **super().serialize(),
-      "type": "item",
-      "durability": self.durability,
-      "is_door": self.is_door,
-      "is_destroyed": self.is_destroyed
-    }
+    def update(self):
+        super().update()
+
+        if self.is_on_fire:
+            self.damage()
+
+            if self.is_destroyed:
+                self._floor.set_on_fire()
+
+    def draw(self, canvas):
+        self._floor.draw(canvas)
+
+        if not self.is_destroyed:
+            super().draw(canvas)
+
+    def draw_fire(self, canvas):
+        self._fire_state = (self._fire_state + 1) % FIRE_STATE_COUNT
+        scaled_sprite = pygame.transform.scale(
+            sprite_map["fires"][self._fire_state - 1],
+            (SQUARE_SIZE * FIRE_SIZE_ON_OBJECT, SQUARE_SIZE * FIRE_SIZE_ON_OBJECT),
+        )
+        canvas.blit(
+            scaled_sprite,
+            (
+                self.x * SQUARE_SIZE + SQUARE_SIZE * (1 - FIRE_SIZE_ON_OBJECT) / 2,
+                self.y * SQUARE_SIZE + SQUARE_SIZE * (1 - FIRE_SIZE_ON_OBJECT),
+            ),
+        )

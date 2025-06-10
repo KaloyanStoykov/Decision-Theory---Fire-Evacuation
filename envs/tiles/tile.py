@@ -1,62 +1,40 @@
 import pygame
 from envs.sprites import sprite_map
-from envs.constants import FIRE_LAST_STEP
+from envs.tiles.base import Base
+from envs.constants import SQUARE_SIZE
 
-class Tile:
-  is_on_fire = False
-  _image = None
-  _fire_state = 1
-  
-  def __init__(self, x, y, state_tile: dict, is_traversable, inflammable):
-    self.state_tile = state_tile
-    self.x = x
-    self.y = y
-    self.is_traversable = is_traversable
-    self.is_inflammable = inflammable
-  
-  def set_image(self, image, size):
-    self._image = pygame.transform.scale(image, (size, size))
-  
-  def increase_fire(self):
-    self._fire_state += 1
-    
-    if self._fire_state > FIRE_LAST_STEP:
-      self._fire_state= 1
-    
-    self.update_state()
-    
-  
-  def set_on_fire(self):
-    if not self.is_inflammable:
-      raise Exception("Tile is not inflammable")
-    
-    self.is_on_fire = True
-    self.update_state()
-        
-  def put_out_fire(self):
-    self.is_on_fire = False
-    self._fire_state = 1
-    self.update_state()
-  
-  def draw(self, canvas, square_size, x, y):
-    canvas.blit(self._image, (x * square_size, y * square_size))
-    
-    if self.is_on_fire:
-      self.draw_fire(canvas, square_size, x, y)
+FIRE_STATE_COUNT = len(sprite_map["fires"])
 
-  def draw_fire(self, canvas, square_size, x, y):
-    scaled_sprite = pygame.transform.scale(sprite_map["fires"][self._fire_state - 1], (square_size, square_size))
-    canvas.blit(scaled_sprite, (x * square_size, y * square_size))
-    self.increase_fire()
-  
-  def serialize(self):
-    return {
-      "type": "tile",
-      "is_on_fire": self.is_on_fire
-    }
-    
-  def update_state(self):
-    self.state_tile.clear()
-    
-    for key, value in self.serialize().items():
-      self.state_tile[key] = value
+
+class Tile(Base):
+    is_on_fire = False
+    is_breakable = False
+    is_traversable = False
+    is_inflammable = False
+    _fire_state = 1
+
+    def __init__(self, x, y):
+        super().__init__(x, y)
+
+    def set_on_fire(self):
+        if not self.is_inflammable:
+            raise Exception("Tile is not inflammable")
+
+        self.is_on_fire = True
+        self._fire_state = 0
+
+    def put_out_fire(self):
+        self.is_on_fire = False
+
+    def draw(self, canvas):
+        super().draw(canvas)
+
+        if self.is_on_fire:
+            self.draw_fire(canvas)
+
+    def draw_fire(self, canvas):
+        self._fire_state = (self._fire_state + 1) % FIRE_STATE_COUNT
+        canvas.blit(
+            sprite_map["fires"][self._fire_state - 1],
+            (self.x * SQUARE_SIZE, self.y * SQUARE_SIZE),
+        )

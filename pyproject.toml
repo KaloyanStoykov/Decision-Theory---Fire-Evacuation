@@ -1,0 +1,19 @@
+[project]
+name = "decision-theory-fire-evacuation"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Alexander Popov",email = "alexander.popov233@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "numpy (>=2.3.0,<3.0.0)",
+    "gymnasium[box2d] (>=1.1.1,<2.0.0)",
+    "pygame (>=2.6.1,<3.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

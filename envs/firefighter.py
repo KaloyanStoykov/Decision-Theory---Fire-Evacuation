@@ -1,35 +1,42 @@
+import numpy as np
 from envs.sprites import sprite_map
-from envs.constants import SQUARE_SIZE
-from enum import Enum
-import pygame
+from envs.tiles.base import Base
 
-class State(Enum):
-  Idle = 0
-  Dying = 1
+IDLE_STATE_COUNT = len(sprite_map["firefighter"]["idle"])
+DEATH_STATE_COUNT = len(sprite_map["firefighter"]["dying"])
 
-class FireFighter:
-  def __init__(self, size):
-    self.size = size
-    self.anim_state = 0
-    self.state = State.Idle
-    self.update()
-  
-  def update(self):
-    if self.state == State.Idle:
-      self.anim_state = (self.anim_state + 1) % 6
-      self.set_image(sprite_map["firefighter"]["idle"][self.anim_state])
-    else:
-      self.anim_state = (self.anim_state + 1) % 7
-      self.set_image(sprite_map["firefighter"]["dying"][self.anim_state])
 
-  def kill(self):
-    self.state = State.Dying
-    self.anim_state = 1
+class FireFighter(Base):
+    _anim_state = 0
+    is_alive = True
 
-  def set_image(self, image):
-    self._image = pygame.transform.scale(image, (self.size, self.size))
+    def __init__(self, location: np.ndarray):
+        (x, y) = location
+        super().__init__(x, y)
+        self.location = location
 
-  def draw(self, canvas, x, y):
-    self.update()
-    canvas.blit(self._image, (x * self.size, y * self.size))
-    
+    def move(self, x: int, y: int):
+        self.x = x
+        self.y = y
+        self.location = np.array([self.x, self.y])
+
+    def move(self, location: np.ndarray):
+        self.x, self.y = location
+        self.location = location
+
+    def kill(self):
+        self._anim_state = 1
+        self.is_alive = False
+
+    def draw(self, canvas):
+        if self.is_alive:
+            self._anim_state = (self._anim_state + 1) % IDLE_STATE_COUNT
+            self._set_image(sprite_map["firefighter"]["idle"][self._anim_state])
+        else:
+            if self._anim_state < DEATH_STATE_COUNT - 1:
+                self._anim_state += 1
+                self._set_image(sprite_map["firefighter"]["dying"][self._anim_state])
+            else:
+                self._anim_state = 0
+
+        return super().draw(canvas)

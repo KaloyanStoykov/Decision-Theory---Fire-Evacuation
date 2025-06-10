@@ -1,51 +1,37 @@
 from collections import defaultdict
 import gymnasium as gym
 import numpy as np
+from envs.constants import Action
+
+# from constants import DISCOUNT_FACTOR, LEARNING_RATE, EPSILON_DECAY, FINAL_EPSILON
+
+N_EPISODES = 100_000
+START_EPSILON = 1.0
+LEARNING_RATE = (0.01,)
+INITIAL_EPSILON = START_EPSILON
+EPSILON_DECAY = (START_EPSILON / (N_EPISODES / 2),)  # reduce the exploration over time
+FINAL_EPSILON = (0.1,)
+DISCOUNT_FACTOR = 0.95
+
 
 class Agent:
-    def __init__(
-        self,
-        env: gym.Env,
-        learning_rate: float,
-        initial_epsilon: float,
-        epsilon_decay: float,
-        final_epsilon: float,
-        discount_factor: float = 0.95,
-    ):
-        """Initialize a Reinforcement Learning agent with an empty dictionary
-        of state-action values (q_values), a learning rate and an epsilon.
-
-        Args:
-            env: The training environment
-            learning_rate: The learning rate
-            initial_epsilon: The initial epsilon value
-            epsilon_decay: The decay for epsilon
-            final_epsilon: The final epsilon value
-            discount_factor: The discount factor for computing the Q-value
-        """
+    def __init__(self, env: gym.Env):
         self.env = env
-        self.q_values = defaultdict(lambda: np.zeros(env.action_space.n))
-
-        self.lr = learning_rate
-        self.discount_factor = discount_factor
-
-        self.epsilon = initial_epsilon
-        self.epsilon_decay = epsilon_decay
-        self.final_epsilon = final_epsilon
-
+        self.q_table = np.zeros([len(env.observation_space), env.action_space.n])
+        self.epsilon = INITIAL_EPSILON
         self.training_error = []
 
-    def get_action(self, obs: tuple[int, int, bool]) -> int:
+    def get_action(
+        self, actions: list[Action], obs: tuple[int, int, bool] = None
+    ) -> int:
         """
         Returns the best action with probability (1 - epsilon)
         otherwise a random action with probability epsilon to ensure exploration.
         """
-        # with probability epsilon return a random action to explore the environment
-        if np.random.random() < self.epsilon:
-            return self.env.action_space.sample()
-        # with probability (1 - epsilon) act greedily (exploit)
-        else:
-            return int(np.argmax(self.q_values[obs]))
+        if np.random.uniform(0, 1) < self.epsilon:
+            return actions.sample()
+        else:  # with probability (1 - epsilon) act greedily (exploit)
+            return int(np.argmax(self.q_table[obs]))
 
     def update(
         self,
@@ -56,15 +42,13 @@ class Agent:
         next_obs: tuple[int, int, bool],
     ):
         """Updates the Q-value of an action."""
-        future_q_value = (not terminated) * np.max(self.q_values[next_obs])
-        temporal_difference = (
-            reward + self.discount_factor * future_q_value - self.q_values[obs][action]
-        )
+        q_value = self.q_table[obs][action]
+        future_q_value = np.max(self.q_table[next_obs])
 
-        self.q_values[obs][action] = (
-            self.q_values[obs][action] + self.lr * temporal_difference
-        )
+        temporal_difference = reward + DISCOUNT_FACTOR * future_q_value - q_value
+
+        self.q_table[obs][action] = q_value + LEARNING_RATE * temporal_difference
         self.training_error.append(temporal_difference)
 
     def decay_epsilon(self):
-        self.epsilon = max(self.final_epsilon, self.epsilon - self.epsilon_decay)
+        self.epsilon = max(FINAL_EPSILON, self.epsilon - EPSILON_DECAY)
