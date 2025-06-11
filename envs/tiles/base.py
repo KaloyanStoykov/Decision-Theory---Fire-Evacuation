@@ -18,3 +18,6 @@ class Base:
 
     def update(self):
         pass
+
+    def animate(self):
+        pass

@@ -32,8 +32,11 @@ class Tile(Base):
             self.draw_fire(canvas)
 
     def draw_fire(self, canvas):
-        self._fire_state = (self._fire_state + 1) % FIRE_STATE_COUNT
         canvas.blit(
             sprite_map["fires"][self._fire_state - 1],
             (self.x * config.square_size, self.y * config.square_size),
         )
+
+    def animate(self):
+        if self.is_on_fire:
+            self._fire_state = (self._fire_state + 1) % FIRE_STATE_COUNT

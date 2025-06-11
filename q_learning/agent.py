@@ -35,7 +35,7 @@ class Agent:
         else:
             self.q_table = np.zeros([config.grid_size * config.grid_size, len(Action)])
 
-    def get_action(self, actions: list[Action], obs: Observation = None) -> int:
+    def get_action(self, actions: list[Action], obs: Observation) -> int:
         """
         Returns the best action with probability (1 - epsilon)
         otherwise a random action with probability epsilon to ensure exploration.
@@ -43,10 +43,7 @@ class Agent:
         if np.random.uniform(0, 1) < self.epsilon:
             return actions.sample()
         else:  # with probability (1 - epsilon) act greedily (exploit)
-            action = int(np.argmax(self.q_table[obs]))
-
-            if not action in Action:
-                raise ValueError(f"Invalid action: {action}")
+            action = np.argmax(self.q_table[encode_observation(obs)])
 
             return action
 

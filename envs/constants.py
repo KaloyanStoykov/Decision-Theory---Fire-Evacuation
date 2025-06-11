@@ -6,6 +6,7 @@ class Config:
         self.grid_size = 6
         self.window_size = 512
         self.fps = 100
+        self.animation_delay = 1
         self.square_size = int(self.window_size / self.grid_size)
         self.durability_power = 1
 
@@ -88,7 +89,7 @@ class Action(Enum):
     UP = 1
     LEFT = 2
     DOWN = 3
-    # PUT_OUT_FIRE = 4
+    PUT_OUT_FIRE = 4
 
 
 type Observation = tuple[int, int]

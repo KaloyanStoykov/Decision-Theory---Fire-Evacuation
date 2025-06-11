@@ -8,18 +8,23 @@ from envs.utilities import decide_action, random_tile, is_occupied
 from envs.characters.cat import Cat
 from envs.characters.firefighter import FireFighter
 from envs.constants import Action
+from envs.ui.sprites import sprite_map
 
 ACTION_TO_DIRECTION = {
     Action.RIGHT.value: np.array([1, 0]),
     Action.UP.value: np.array([0, -1]),
     Action.LEFT.value: np.array([-1, 0]),
     Action.DOWN.value: np.array([0, 1]),
+    Action.PUT_OUT_FIRE.value: np.array([0, 0]),
 }
 
 
 class Grid:
     def __init__(self, np_random=np.random):
         self.np = np_random
+        self.is_animation_on_going = False
+        self.extinguishing_tile = None
+        self.extinguishing_state = 0
         self.create_grid()
 
     def create_grid(self):
@@ -86,26 +91,57 @@ class Grid:
     def is_agent_dead(self):
         return self.tiles[self.agent.x][self.agent.y].is_on_fire
 
-    def update(self, action: Action):
+    def update(self, action: Action = None):
+        if action is not None:
+            next_agent_location = (
+                self.agent.location + ACTION_TO_DIRECTION[action.value]
+            )
 
-        next_agent_location = self.agent.location + ACTION_TO_DIRECTION[action.value]
+            if (
+                next_agent_location[0] < 0
+                or next_agent_location[1] < 0
+                or next_agent_location[0] >= config.grid_size
+                or next_agent_location[1] >= config.grid_size
+                or not self.tiles[next_agent_location[0]][
+                    next_agent_location[1]
+                ].is_traversable
+            ):
+                self._update_tiles()
+                return False
 
-        if (
-            next_agent_location[0] < 0
-            or next_agent_location[1] < 0
-            or next_agent_location[0] >= config.grid_size
-            or next_agent_location[1] >= config.grid_size
-            or not self.tiles[next_agent_location[0]][
-                next_agent_location[1]
-            ].is_traversable
-        ):
-            self._update_tiles()
-            return False
+            self.agent.move(next_agent_location)
 
-        self.agent.move(next_agent_location)
+            if action == Action.PUT_OUT_FIRE:
+                for movement in [Action.UP, Action.DOWN, Action.LEFT, Action.RIGHT]:
+                    border_tile_location = (
+                        self.agent.location + ACTION_TO_DIRECTION[movement.value]
+                    )
 
-        if self.is_agent_dead():
-            self.agent.kill()
+                    if (
+                        border_tile_location[0] < 0
+                        or border_tile_location[1] < 0
+                        or border_tile_location[0] >= config.grid_size
+                        or border_tile_location[1] >= config.grid_size
+                        or not self.tiles[border_tile_location[0]][
+                            border_tile_location[1]
+                        ].is_inflammable
+                    ):
+                        continue
+
+                    if self.tiles[border_tile_location[0]][
+                        border_tile_location[1]
+                    ].is_on_fire:
+                        self.extinguishing_tile = self.tiles[border_tile_location[0]][
+                            border_tile_location[1]
+                        ]
+                        break
+
+            if self.is_agent_dead():
+                if self.is_animation_on_going:
+                    self.is_animation_on_going = self.agent._anim_state != 0
+                else:
+                    self.agent.kill()
+                    self.is_animation_on_going = True
 
         self._update_tiles()
 
@@ -133,6 +169,37 @@ class Grid:
 
         self.target.draw(canvas)
         self.agent.draw(canvas)
+
+        if self.extinguishing_tile is not None:
+            self.extinguishing_tile.draw(canvas)
+            if self.extinguishing_state < 2:
+                canvas.blit(
+                    sprite_map["firefighter"]["put_out_fire"][self.extinguishing_state],
+                    (
+                        self.extinguishing_tile.x * config.square_size,
+                        self.extinguishing_tile.y * config.square_size,
+                    ),
+                )
+            else:
+                self.extinguishing_tile.put_out_fire()
+                self.extinguishing_tile = None
+                self.extinguishing_state = 0
+                self.is_animation_on_going = False
+
+        if self.is_animation_on_going and self.agent._anim_state == 0:
+            self.is_animation_on_going = False
+
+    def animate(self):
+        for row in self.tiles:
+            for tile in row:
+                tile.animate()
+
+        self.target.animate()
+        self.agent.animate()
+
+        if self.extinguishing_tile is not None:
+            if self.extinguishing_state < 2:
+                self.extinguishing_state += 1
 
     def _random_empty_space(self):
         possible_tiles = []

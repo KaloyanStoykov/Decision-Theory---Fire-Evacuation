@@ -14,6 +14,9 @@ class Cat(Base):
         self.location = location
 
     def draw(self, canvas):
-        self._anim_state = (self._anim_state + 1) % STATE_COUNT
         self._set_image(sprite_map["cat"][self._anim_state])
         super().draw(canvas)
+
+    def animate(self):
+        self._anim_state = (self._anim_state + 1) % STATE_COUNT
+        return super().animate()

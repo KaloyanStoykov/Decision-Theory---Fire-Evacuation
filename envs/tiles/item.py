@@ -113,7 +113,6 @@ class Item(Tile):
             super().draw(canvas)
 
     def draw_fire(self, canvas):
-        self._fire_state = (self._fire_state + 1) % FIRE_STATE_COUNT
         scaled_sprite = pygame.transform.scale(
             sprite_map["fires"][self._fire_state - 1],
             (

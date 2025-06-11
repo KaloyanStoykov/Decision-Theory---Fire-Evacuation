@@ -4,59 +4,59 @@ from envs.constants import Action, config
 from envs.ui.window import Window
 from envs.grid import Grid
 import threading
-from time import sleep
 
-
-config.fps = 8
 window = Window()
 grid = Grid()
+config.fps = 60
+config.animation_delay = 60 / 8
+config.chance_of_catching_fire = 0.02
+config.chance_of_self_extinguish = 0.002
 pressed_keys = pygame.key.get_pressed()
 running = True
-
-pygame.key.set_repeat(400, 170)
-
-
-def detect_input():
-    global pressed_keys, running
-    while running:
-        pressed_keys = pygame.key.get_pressed()
-        sleep(0.001)
 
 
 def play():
     global running
-    thread = threading.Thread(target=detect_input, daemon=True)
-    thread.start()
 
     while running:
         action = None
 
-        if pressed_keys[pygame.K_UP]:
-            action = Action.UP
-        elif pressed_keys[pygame.K_DOWN]:
-            action = Action.DOWN
-        elif pressed_keys[pygame.K_LEFT]:
-            action = Action.LEFT
-        elif pressed_keys[pygame.K_RIGHT]:
-            action = Action.RIGHT
-        elif pressed_keys[pygame.K_KP_ENTER]:
-            action = Action.PUT_OUT_FIRE
-        elif pressed_keys[pygame.K_ESCAPE] or pressed_keys[pygame.K_q]:
-            running = False
+        for event in pygame.event.get():
+            if event.type != pygame.KEYDOWN:
+                continue
 
-        if action:
-            grid.update(action)
+            match event.key:
+                case pygame.K_UP | pygame.K_w:
+                    action = Action.UP
+                case pygame.K_DOWN | pygame.K_s:
+                    action = Action.DOWN
+                case pygame.K_LEFT | pygame.K_a:
+                    action = Action.LEFT
+                case pygame.K_RIGHT | pygame.K_d:
+                    action = Action.RIGHT
+                case pygame.K_KP_ENTER | pygame.K_RETURN | pygame.K_SPACE:
+                    action = Action.PUT_OUT_FIRE
+                case pygame.K_ESCAPE | pygame.K_q | pygame.K_SPACE:
+                    running = False
+
+        grid.update(action)
 
         if np.array_equal(grid.agent.location, grid.target.location):
-            running = False
+            window.draw(lambda canvas: grid.draw(canvas), lambda: grid.animate())
+            running = window.win_screen()
+            if running:
+                grid.create_grid()
 
         if grid.is_agent_dead():
-            while grid.agent._anim_state != 0:
-                window.draw(lambda canvas: grid.draw(canvas))
+            while grid.is_animation_on_going:
+                window.draw(lambda canvas: grid.draw(canvas), lambda: grid.animate())
 
-            grid.create_grid()
+            running = window.game_over_screen()
+
+            if running:
+                grid.create_grid()
         else:
-            window.draw(lambda canvas: grid.draw(canvas))
+            window.draw(lambda canvas: grid.draw(canvas), lambda: grid.animate())
 
     window.close()
 

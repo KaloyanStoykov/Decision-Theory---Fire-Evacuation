@@ -25,7 +25,7 @@ def run():
     observation, _ = env.reset()
 
     for _ in range(N_EPISODES):
-        action = agent.get_action(env.action_space)
+        action = agent.get_action(env.action_space, observation)
 
         next_observation, reward, terminated, _, _ = env.step(action)
 

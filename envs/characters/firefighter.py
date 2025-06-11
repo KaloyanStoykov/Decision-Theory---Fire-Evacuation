@@ -30,13 +30,20 @@ class FireFighter(Base):
 
     def draw(self, canvas):
         if self.is_alive:
-            self._anim_state = (self._anim_state + 1) % IDLE_STATE_COUNT
             self._set_image(sprite_map["firefighter"]["idle"][self._anim_state])
         else:
             if self._anim_state < DEATH_STATE_COUNT - 1:
-                self._anim_state += 1
                 self._set_image(sprite_map["firefighter"]["dying"][self._anim_state])
+
+        return super().draw(canvas)
+
+    def animate(self):
+        if self.is_alive:
+            self._anim_state = (self._anim_state + 1) % IDLE_STATE_COUNT
+        else:
+            if self._anim_state < DEATH_STATE_COUNT - 1:
+                self._anim_state += 1
             else:
                 self._anim_state = 0
 
-        return super().draw(canvas)
+        return super().animate()

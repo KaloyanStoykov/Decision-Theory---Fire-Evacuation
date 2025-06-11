@@ -118,7 +118,7 @@ def test_sprite(sprite, size):
     pygame.quit()
 
 
-def fix_firefighter(sprite):
+def fix_firefighter(sprite, with_shadow=True):
     size = 24
     x = (100 - size) // 2  # = 42
     y = (100 - size) // 2  # = 42
@@ -147,6 +147,10 @@ def fix_firefighter(sprite):
     ]
 
     firefigther = scale(sprite.subsurface(pygame.Rect(x, y, size, size)).copy())
+    shadow = load_sprite_sheet("assets/Soldier-Shadow.png", 1, 1, 100)[0][0]
+    shadow.fill((0, 0, 0, 128), special_flags=pygame.BLEND_RGBA_MULT)
+
+    shadow = scale(shadow.subsurface(pygame.Rect(x, y, size, size)).copy())
 
     width, height = firefigther.get_size()
     for x in range(width):
@@ -155,7 +159,12 @@ def fix_firefighter(sprite):
                 if firefigther.get_at((x, y)) == old_color:
                     firefigther.set_at((x, y), new_color)
 
-    return firefigther
+    if not with_shadow:
+        return firefigther
+
+    shadow.blit(firefigther, (0, 0))
+
+    return shadow
 
 
 def fix_cat(sprite):
@@ -176,6 +185,12 @@ sprite_map = {
                 load_sprite_sheet("assets/Soldier-Hurt.png", 1, 3, 100)[0]
                 + load_sprite_sheet("assets/Soldier-Death.png", 1, 4, 100)[0]
             )
+        ],
+        "put_out_fire": [
+            fix_firefighter(sprite, False)
+            for sprite in load_sprite_sheet(
+                "assets/Soldier-Attack01_Effect.png", 1, 6, 100
+            )[0][3:5]
         ],
     },
     "cat": [

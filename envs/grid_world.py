@@ -21,7 +21,7 @@ class FireFighterWorld(gym.Env):
             )  # agent
         )
 
-        self.action_space = spaces.Discrete(4)
+        self.action_space = spaces.Discrete(len(Action))
 
         assert render_mode is None or render_mode in self.metadata["render_modes"]
         self.render_mode = render_mode
@@ -83,7 +83,10 @@ class FireFighterWorld(gym.Env):
             self._render_frame()
 
     def _render_frame(self):
-        self.window.draw(lambda canvas: self.grid.draw(canvas))
+        self.window.draw(
+            lambda canvas: self.grid.draw(canvas),
+            lambda: self.grid.animate(),
+        )
 
     def close(self):
         if self.window is not None:
