@@ -1,7 +1,6 @@
-import pygame
-from envs.sprites import sprite_map
+from envs.ui.sprites import sprite_map
 from envs.tiles.base import Base
-from envs.constants import SQUARE_SIZE
+from envs.constants import config
 
 FIRE_STATE_COUNT = len(sprite_map["fires"])
 
@@ -36,5 +35,5 @@ class Tile(Base):
         self._fire_state = (self._fire_state + 1) % FIRE_STATE_COUNT
         canvas.blit(
             sprite_map["fires"][self._fire_state - 1],
-            (self.x * SQUARE_SIZE, self.y * SQUARE_SIZE),
+            (self.x * config.square_size, self.y * config.square_size),
         )

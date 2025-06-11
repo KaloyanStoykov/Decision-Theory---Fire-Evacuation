@@ -1,16 +1,30 @@
 import gymnasium as gym
-from utilities import create_env
 from q_learning.agent import Agent
+from q_learning.constants import N_EPISODES, RENDER
+from envs.constants import config
 
 
-env = create_env(render=True)
-agent = Agent(env=env)
+def create_env():
+    gym.envs.registration.register(
+        id="FireFighterWorld",
+        entry_point="envs:FireFighterWorld",
+    )
+
+    env = gym.make("FireFighterWorld", render_mode="human" if RENDER else "rgb_array")
+    env.reset(seed=42)
+
+    return env
+
+
+agent = Agent()
+config.chance_of_catching_fire = 0
 
 
 def run():
+    env = create_env()
     observation, _ = env.reset()
 
-    for _ in range(10_000):
+    for _ in range(N_EPISODES):
         action = agent.get_action(env.action_space)
 
         next_observation, reward, terminated, _, _ = env.step(action)

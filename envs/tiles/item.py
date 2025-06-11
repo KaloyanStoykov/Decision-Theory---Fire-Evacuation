@@ -1,13 +1,8 @@
 import pygame
 from envs.tiles.floor import Floor
 from envs.tiles.tile import Tile
-from envs.constants import (
-    Items,
-    DURABILITY_POWER,
-    FIRE_SIZE_ON_OBJECT,
-    SQUARE_SIZE,
-)
-from envs.sprites import sprite_map
+from envs.constants import Items, config
+from envs.ui.sprites import sprite_map
 
 FIRE_STATE_COUNT = len(sprite_map["fires"])
 
@@ -93,7 +88,7 @@ class Item(Tile):
         self.is_inflammable = False
 
         (durability, image) = durability_and_image_for_item(type)
-        self.durability = durability * DURABILITY_POWER
+        self.durability = durability * config.durability_power
         self._set_image(image)
 
     def damage(self):
@@ -121,12 +116,17 @@ class Item(Tile):
         self._fire_state = (self._fire_state + 1) % FIRE_STATE_COUNT
         scaled_sprite = pygame.transform.scale(
             sprite_map["fires"][self._fire_state - 1],
-            (SQUARE_SIZE * FIRE_SIZE_ON_OBJECT, SQUARE_SIZE * FIRE_SIZE_ON_OBJECT),
+            (
+                config.square_size * config.fire_size_on_object,
+                config.square_size * config.fire_size_on_object,
+            ),
         )
         canvas.blit(
             scaled_sprite,
             (
-                self.x * SQUARE_SIZE + SQUARE_SIZE * (1 - FIRE_SIZE_ON_OBJECT) / 2,
-                self.y * SQUARE_SIZE + SQUARE_SIZE * (1 - FIRE_SIZE_ON_OBJECT),
+                self.x * config.square_size
+                + config.square_size * (1 - config.fire_size_on_object) / 2,
+                self.y * config.square_size
+                + config.square_size * (1 - config.fire_size_on_object),
             ),
         )

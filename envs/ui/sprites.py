@@ -1,5 +1,5 @@
 import pygame
-from envs.constants import SQUARE_SIZE
+from envs.constants import config
 
 # 8x28
 # 128x432
@@ -8,7 +8,7 @@ ENV_SPRITE_COLS = 8
 PADDING = 0
 
 
-def scale(sprite, size=SQUARE_SIZE):
+def scale(sprite, size=config.square_size):
     return pygame.transform.scale(sprite, (size, size))
 
 
@@ -71,8 +71,8 @@ def display_sheet(sprites, rows, cols):
     pygame.init()
     screen = pygame.display.set_mode(
         (
-            cols * (PADDING + SQUARE_SIZE) + PADDING,
-            rows * (PADDING + SQUARE_SIZE) + PADDING,
+            cols * (PADDING + config.square_size) + PADDING,
+            rows * (PADDING + config.square_size) + PADDING,
         )
     )
     clock = pygame.time.Clock()
@@ -84,7 +84,7 @@ def display_sheet(sprites, rows, cols):
                 running = False
 
         screen.fill((255, 255, 255))
-        tile_size = SQUARE_SIZE + PADDING  # space between sprites (padding)
+        tile_size = config.square_size + PADDING  # space between sprites (padding)
 
         for row in range(rows):
             for col in range(cols):
@@ -160,7 +160,7 @@ def fix_firefighter(sprite):
 
 def fix_cat(sprite):
     PADDING = 34
-    return scale(sprite, SQUARE_SIZE - PADDING)
+    return scale(sprite, config.square_size - PADDING)
 
 
 sprite_map = {
@@ -262,7 +262,7 @@ for color_i, color in enumerate(["red", "blue", "purple"]):
 # fix top wall black strips
 w = scale(sprite_map["wall"]["top"]).get_width()
 WALL_PADDING = 7
-for y in range(SQUARE_SIZE):
+for y in range(config.square_size):
     for x in range(WALL_PADDING):
         sprite_map["wall"]["top"].set_at(
             (x, y), sprite_map["wall"]["top"].get_at((WALL_PADDING, y))

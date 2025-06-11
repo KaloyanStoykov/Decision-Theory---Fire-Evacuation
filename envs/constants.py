@@ -1,22 +1,28 @@
 from enum import Enum
 
-GRID_SIZE = 6
-WINDOW_SIZE = 512
-SQUARE_SIZE = int(WINDOW_SIZE / GRID_SIZE)
-FPS = 100
-DURABILITY_POWER = 1
-FIRE_SIZE_ON_OBJECT = 0.6
-# CHANCE_OF_CATCHING_FIRE = 0.04
-CHANCE_OF_CATCHING_FIRE = 0
-CHANCE_OF_SELF_EXTINGUISH = 0.004
-CHANCE_OF_WALL_BEING_WINDOW = 0.1
-CHANCE_OF_WALL_BEING_PICTURE = 0.1
 
-INITIAL_POINTS = 1000
-ITEM_DAMAGE_PUNISHMENT = 10
-TIME_STEP_PUNISHMENT = 1
-DEATH_PUNISHMENT = -10
-ILLEAGAL_MOVE_PUNISHMENT = -10
+class Config:
+    def __init__(self):
+        self.grid_size = 6
+        self.window_size = 512
+        self.fps = 100
+        self.square_size = int(self.window_size / self.grid_size)
+        self.durability_power = 1
+
+        self.fire_size_on_object = 0.6
+        self.chance_of_catching_fire = 0.04
+        self.chance_of_self_extinguish = 0.004
+        self.chance_of_wall_being_window = 0.1
+        self.chance_of_wall_being_picture = 0.1
+
+        self.initial_points = 1000
+        self.item_damage_punishment = 10
+        self.time_step_punishment = 1
+        self.death_punishment = -10
+        self.illeagal_move_punishment = -10
+
+
+config = Config()
 
 
 class Side(Enum):
@@ -82,7 +88,7 @@ class Action(Enum):
     UP = 1
     LEFT = 2
     DOWN = 3
-    PUT_OUT_FIRE = 4
+    # PUT_OUT_FIRE = 4
 
 
 type Observation = tuple[int, int]

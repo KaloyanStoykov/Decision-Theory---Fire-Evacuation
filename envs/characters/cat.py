@@ -1,5 +1,5 @@
 import numpy as np
-from envs.sprites import sprite_map
+from envs.ui.sprites import sprite_map
 from envs.tiles.base import Base
 
 STATE_COUNT = len(sprite_map["cat"])

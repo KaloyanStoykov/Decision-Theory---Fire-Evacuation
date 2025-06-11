@@ -1,52 +1,32 @@
 import gymnasium as gym
 from gymnasium import spaces
-import pygame
 import numpy as np
 from envs.grid import Grid
-from envs.constants import (
-    Action,
-    WINDOW_SIZE,
-    GRID_SIZE,
-    INITIAL_POINTS,
-    ILLEAGAL_MOVE_PUNISHMENT,
-    DEATH_PUNISHMENT,
-    FPS,
-)
+from envs.constants import Action, config
+from envs.ui.window import Window
 
 
 class FireFighterWorld(gym.Env):
-    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": FPS}
+    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": config.fps}
 
-    def __init__(self, render_mode=None, size=5):
+    def __init__(self, render_mode=None):
         self.grid = Grid(self.np_random)
-        self.points = INITIAL_POINTS
-        self.canvas = pygame.Surface((WINDOW_SIZE, WINDOW_SIZE))
-        self.canvas.fill((255, 255, 255))
+        self.points = config.initial_points
 
         self.observation_space = spaces.Tuple(
             # (spaces.Box(0, size - 1, shape=(2,), dtype=int),)  # agent
-            (spaces.Discrete(size + 1), spaces.Discrete(size + 1))  # agent
+            (
+                spaces.Discrete(config.grid_size),
+                spaces.Discrete(config.grid_size),
+            )  # agent
         )
 
         self.action_space = spaces.Discrete(4)
-        self._action_to_direction = {
-            Action.RIGHT.value: np.array([1, 0]),
-            Action.UP.value: np.array([0, 1]),
-            Action.LEFT.value: np.array([-1, 0]),
-            Action.DOWN.value: np.array([0, -1]),
-        }
 
         assert render_mode is None or render_mode in self.metadata["render_modes"]
         self.render_mode = render_mode
 
-        if self.render_mode == "human":
-            pygame.init()
-            pygame.display.init()
-            self.window = pygame.display.set_mode((WINDOW_SIZE, WINDOW_SIZE))
-            self.clock = pygame.time.Clock()
-        else:
-            self.window = None
-            self.clock = None
+        self.window = Window() if self.render_mode == "human" else None
 
     def _get_obs(self):
         return (self.grid.agent.x, self.grid.agent.y)
@@ -60,7 +40,10 @@ class FireFighterWorld(gym.Env):
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
 
-        self.grid.create_grid(self.np_random)
+        if seed is not None:
+            self.grid = Grid(self.np_random)
+
+        self.grid.create_grid()
         observation = self._get_obs()
         info = self._get_info()
 
@@ -70,22 +53,19 @@ class FireFighterWorld(gym.Env):
         return observation, info
 
     def step(self, action):
-        direction = self._action_to_direction[action]
-        is_legal_move = self.grid.update(
-            np.clip(self.grid.agent.location + direction, 0, GRID_SIZE - 1)
-        )
+        is_legal_move = self.grid.update(list(Action)[action])
 
-        reward = self.points / INITIAL_POINTS
+        reward = self.points / config.initial_points
         terminated = False
 
         if not is_legal_move:
-            reward = ILLEAGAL_MOVE_PUNISHMENT
+            reward = config.illeagal_move_punishment
         elif self.grid.is_agent_dead() or np.array_equal(
             self.grid.agent.location, self.grid.target.location
         ):
             terminated = True
             if self.grid.is_agent_dead():
-                reward = DEATH_PUNISHMENT
+                reward = config.death_punishment
 
         if self.render_mode == "human":
             self._render_frame()
@@ -103,14 +83,8 @@ class FireFighterWorld(gym.Env):
             self._render_frame()
 
     def _render_frame(self):
-        self.grid.draw(self.canvas)
-        self.window.blit(self.canvas, self.canvas.get_rect())
-
-        pygame.event.pump()
-        pygame.display.update()
-        self.clock.tick(self.metadata["render_fps"])
+        self.window.draw(lambda canvas: self.grid.draw(canvas))
 
     def close(self):
         if self.window is not None:
-            pygame.display.quit()
-            pygame.quit()
+            self.window.close()

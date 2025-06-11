@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 import numpy as np
-from envs.constants import GRID_SIZE
+from envs.constants import config
 
 UP = "↑"
 DOWN = "↓"
@@ -44,9 +44,9 @@ class Visualizer:
         self.epsilon.update(epsilon)
 
         q_values = np.zeros(self.grid_shape)
-        for x in range(GRID_SIZE):
-            for y in range(GRID_SIZE):
-                idx = y * GRID_SIZE + x
+        for x in range(config.grid_size):
+            for y in range(config.grid_size):
+                idx = y * config.grid_size + x
                 q_values[x, y] = np.max(q_table[idx])
         self.heatmap.set_data(q_values)
 
@@ -79,10 +79,10 @@ class QValuePlot:
     def __init__(self, axis):
         self.texts = {}
         self.ax = axis
-        self.ax.set_xlim(0, GRID_SIZE)
-        self.ax.set_ylim(0, GRID_SIZE)
-        self.ax.set_xticks(np.arange(0, GRID_SIZE + 1))
-        self.ax.set_yticks(np.arange(0, GRID_SIZE + 1))
+        self.ax.set_xlim(0, config.grid_size)
+        self.ax.set_ylim(0, config.grid_size)
+        self.ax.set_xticks(np.arange(0, config.grid_size + 1))
+        self.ax.set_yticks(np.arange(0, config.grid_size + 1))
         self.ax.grid(True)
         self.ax.invert_yaxis()
         self.ax.set_title("Q-Table Action Values")
@@ -93,8 +93,8 @@ class QValuePlot:
         self.norm = mcolors.Normalize(vmin=-10, vmax=10)
 
         # Initialize all text annotations (one per direction per cell)
-        for x in range(GRID_SIZE):
-            for y in range(GRID_SIZE):
+        for x in range(config.grid_size):
+            for y in range(config.grid_size):
                 cx, cy = y + 0.5, x + 0.5
                 self.texts[(x, y)] = {
                     UP: self.ax.text(
@@ -112,9 +112,9 @@ class QValuePlot:
                 }
 
     def update(self, q_table):
-        for x in range(GRID_SIZE):
-            for y in range(GRID_SIZE):
-                idx = y * GRID_SIZE + x
+        for x in range(config.grid_size):
+            for y in range(config.grid_size):
+                idx = y * config.grid_size + x
                 values = q_table[idx]
 
                 for direction, value in zip([RIGHT, UP, LEFT, DOWN], values):

@@ -1,38 +1,39 @@
 import matplotlib.pyplot as plt
 import os
-from collections import defaultdict
-import gymnasium as gym
 import numpy as np
-from envs.constants import Action, Observation, GRID_SIZE
+from envs.constants import Action, Observation, config
 from q_learning.debug import Visualizer
 
-# from constants import DISCOUNT_FACTOR, LEARNING_RATE, EPSILON_DECAY, FINAL_EPSILON
+from q_learning.constants import (
+    DISCOUNT_FACTOR,
+    LEARNING_RATE,
+    EPSILON_DECAY,
+    FINAL_EPSILON,
+    INITIAL_EPSILON,
+    FILE_NAME,
+    DEBUG,
+    DEBUG_UPDATE,
+)
 
-N_EPISODES = 100_000
-START_EPSILON = 1.0
-LEARNING_RATE = 0.1
-INITIAL_EPSILON = START_EPSILON
-EPSILON_DECAY = START_EPSILON / (N_EPISODES / 2)  # reduce the exploration over time
-FINAL_EPSILON = 0.1
-DISCOUNT_FACTOR = 0.95
 
-visualizer = Visualizer(grid_shape=(GRID_SIZE, GRID_SIZE), num_actions=len(Action))
+visualizer = Visualizer(
+    grid_shape=(config.grid_size, config.grid_size), num_actions=len(Action)
+)
 
 
 def encode_observation(observation):
-    return observation[0] * GRID_SIZE + observation[1]
+    return observation[0] * config.grid_size + observation[1]
 
 
 class Agent:
-    def __init__(self, env: gym.Env):
-        self.env = env
-        self.error_plot_initialized = False
-        if os.path.exists("q_table.npy"):
-            self.q_table = np.load("q_table.npy")
+    epsilon = INITIAL_EPSILON
+    counter = 0
+
+    def __init__(self):
+        if os.path.exists(FILE_NAME):
+            self.q_table = np.load(FILE_NAME)
         else:
-            self.q_table = np.zeros([GRID_SIZE * GRID_SIZE, env.action_space.n])
-        self.epsilon = INITIAL_EPSILON
-        self.training_error = []
+            self.q_table = np.zeros([config.grid_size * config.grid_size, len(Action)])
 
     def get_action(self, actions: list[Action], obs: Observation = None) -> int:
         """
@@ -42,7 +43,12 @@ class Agent:
         if np.random.uniform(0, 1) < self.epsilon:
             return actions.sample()
         else:  # with probability (1 - epsilon) act greedily (exploit)
-            return int(np.argmax(self.q_table[obs]))
+            action = int(np.argmax(self.q_table[obs]))
+
+            if not action in Action:
+                raise ValueError(f"Invalid action: {action}")
+
+            return action
 
     def update(
         self,
@@ -62,14 +68,16 @@ class Agent:
             q_value + LEARNING_RATE * temporal_difference
         )
 
-        self.training_error.append(temporal_difference)
-        if len(self.training_error) % 10 == 0:
-            visualizer.update(
-                q_table=self.q_table, epsilon=self.epsilon, td_error=temporal_difference
-            )
+        if not DEBUG:
+            return
+
+        self.counter += 1
+        if self.counter == DEBUG_UPDATE:
+            self.counter = 0
+            visualizer.update(self.q_table, self.epsilon, temporal_difference)
 
     def decay_epsilon(self):
         self.epsilon = max(FINAL_EPSILON, self.epsilon - EPSILON_DECAY)
 
     def save(self):
-        np.save("q_table.npy", self.q_table)
+        np.save(FILE_NAME, self.q_table)

@@ -1,28 +1,30 @@
 import numpy as np
-from envs.constants import (
-    FloorType,
-    CHANCE_OF_CATCHING_FIRE,
-    CHANCE_OF_SELF_EXTINGUISH,
-    Action,
-    GRID_SIZE,
-)
+from envs.constants import FloorType, config
 from envs.tiles.tile import Tile
 from envs.tiles.wall import Wall
 from envs.tiles.item import Item, Items
 from envs.tiles.floor import Floor
 from envs.utilities import decide_action, random_tile, is_occupied
-from envs.cat import Cat
-from envs.firefighter import FireFighter
+from envs.characters.cat import Cat
+from envs.characters.firefighter import FireFighter
+from envs.constants import Action
+
+ACTION_TO_DIRECTION = {
+    Action.RIGHT.value: np.array([1, 0]),
+    Action.UP.value: np.array([0, -1]),
+    Action.LEFT.value: np.array([-1, 0]),
+    Action.DOWN.value: np.array([0, 1]),
+}
 
 
 class Grid:
-    def __init__(self, np_random):
-        self.create_grid(np_random)
-
-    def create_grid(self, np_random):
+    def __init__(self, np_random=np.random):
         self.np = np_random
+        self.create_grid()
+
+    def create_grid(self):
         self.tiles: list[list[Tile]] = [
-            [None for _ in range(GRID_SIZE)] for _ in range(GRID_SIZE)
+            [None for _ in range(config.grid_size)] for _ in range(config.grid_size)
         ]
 
         self._create_walls()
@@ -60,8 +62,8 @@ class Grid:
             self.tiles[pos[0]][pos[1]].register_neighbors(self.tiles)
 
     def _lay_floors(self):
-        for x in range(GRID_SIZE):
-            for y in range(GRID_SIZE):
+        for x in range(config.grid_size):
+            for y in range(config.grid_size):
                 if not self.tiles[x][y]:
                     self.tiles[x][y] = Floor(
                         x,
@@ -84,10 +86,19 @@ class Grid:
     def is_agent_dead(self):
         return self.tiles[self.agent.x][self.agent.y].is_on_fire
 
-    def update(self, next_agent_location: tuple[int, int]):
-        if not self.tiles[next_agent_location[0]][
-            next_agent_location[1]
-        ].is_traversable:
+    def update(self, action: Action):
+
+        next_agent_location = self.agent.location + ACTION_TO_DIRECTION[action.value]
+
+        if (
+            next_agent_location[0] < 0
+            or next_agent_location[1] < 0
+            or next_agent_location[0] >= config.grid_size
+            or next_agent_location[1] >= config.grid_size
+            or not self.tiles[next_agent_location[0]][
+                next_agent_location[1]
+            ].is_traversable
+        ):
             self._update_tiles()
             return False
 
@@ -98,12 +109,12 @@ class Grid:
 
         self._update_tiles()
 
-        if decide_action(CHANCE_OF_CATCHING_FIRE):
+        if decide_action(config.chance_of_catching_fire):
             tile = random_tile(self.tiles, self.target, self.agent, inflammable=True)
             if tile:
                 tile.set_on_fire()
 
-        if decide_action(CHANCE_OF_SELF_EXTINGUISH):
+        if decide_action(config.chance_of_self_extinguish):
             tile = random_tile(self.tiles, self.target, self.agent, burning=True)
             if tile:
                 tile.put_out_fire()
@@ -115,39 +126,6 @@ class Grid:
             for tile in row:
                 tile.update()
 
-    def get_possible_actions(self):
-        possible_actions = np.ones(len(Action), dtype=bool)
-        possible_actions[Action.BreakDoor.value] = False
-
-        left = self.tiles[self.agent.x - 1][self.agent.y]
-        if self.agent.x == 0:
-            possible_actions[Action.Left.value] = left.is_traversable
-            if left.is_breakable:
-                possible_actions[Action.BreakDoor.value] = True
-
-        right = self.tiles[self.agent.x + 1][self.agent.y]
-        if self.agent.x < GRID_SIZE - 1:
-            possible_actions[Action.Right.value] = right.is_traversable
-            if right.is_breakable:
-                possible_actions[Action.BreakDoor.value] = True
-
-        if right.is_breakable:
-            possible_actions[Action.BreakDoor.value] = True
-
-        top = self.tiles[self.agent.x][self.agent.y - 1]
-        if self.agent.y > 0:
-            possible_actions[Action.Up.value] = top.is_traversable
-            if top.is_breakable:
-                possible_actions[Action.BreakDoor.value] = True
-
-        bottom = self.tiles[self.agent.x][self.agent.y + 1]
-        if self.agent.y < GRID_SIZE - 1:
-            possible_actions[Action.Down.value] = bottom.is_traversable
-            if bottom.is_breakable:
-                possible_actions[Action.BreakDoor.value] = True
-
-        return possible_actions
-
     def draw(self, canvas):
         for row in self.tiles:
             for tile in row:
@@ -156,7 +134,7 @@ class Grid:
         self.target.draw(canvas)
         self.agent.draw(canvas)
 
-    def random_empty_space(self):
+    def _random_empty_space(self):
         possible_tiles = []
 
         possible_tiles: list[Tile] = []

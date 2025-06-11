@@ -1,4 +1,4 @@
-from envs.sprites import *
+from envs.ui.sprites import *
 
 if __name__ == "__main__":
     test_sprite(sprite_map["bin"])

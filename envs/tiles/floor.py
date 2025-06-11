@@ -1,7 +1,7 @@
 from envs.constants import FloorType, Side
 from envs.tiles.tile import Tile
 from envs.tiles.wall import Wall
-from envs.sprites import sprite_map
+from envs.ui.sprites import sprite_map
 
 
 def get_sprite_from_borders(sprite_map: dict, borders: list[Side]):

@@ -1,4 +1,4 @@
-from envs.constants import SQUARE_SIZE
+from envs.constants import config
 
 
 class Base:
@@ -12,7 +12,9 @@ class Base:
         self._image = image
 
     def draw(self, canvas):
-        canvas.blit(self._image, (self.x * SQUARE_SIZE, self.y * SQUARE_SIZE))
+        canvas.blit(
+            self._image, (self.x * config.square_size, self.y * config.square_size)
+        )
 
     def update(self):
         pass

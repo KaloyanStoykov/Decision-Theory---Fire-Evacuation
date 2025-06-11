@@ -1,10 +1,7 @@
 import pygame
 from envs.tiles.tile import Tile
-from envs.sprites import sprite_map
-from envs.constants import (
-    CHANCE_OF_WALL_BEING_WINDOW,
-    CHANCE_OF_WALL_BEING_PICTURE,
-)
+from envs.ui.sprites import sprite_map
+from envs.constants import config
 from envs.utilities import decide_action
 
 
@@ -29,13 +26,13 @@ class Wall(Tile):
             self._set_image(sprite_map["wall"]["front"])
 
             if is_tile_below_empty(tiles, self.x, self.y) and decide_action(
-                CHANCE_OF_WALL_BEING_PICTURE
+                config.chance_of_wall_being_picture
             ):
                 self._set_image(sprite_map["picture"])
             elif (
                 not is_tile_above_wall(tiles, self.x, self.y)
                 and is_tile_below_empty(tiles, self.x, self.y)
-                and decide_action(CHANCE_OF_WALL_BEING_WINDOW)
+                and decide_action(config.chance_of_wall_being_window)
             ):
                 self._set_image(sprite_map["window"])
 
