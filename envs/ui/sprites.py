@@ -1,14 +1,17 @@
 import pygame
 from envs.constants import config
+import os  # Import os for path manipulation
 
-# 8x28
-# 128x432
-ENV_SPRITE_ROWS = 27
+# 8x28 is likely the dimension of the entire sprite sheet in terms of individual 16x16 sprites
+# 128x432 is the pixel dimension of the sheet
+ENV_SPRITE_ROWS = 27  # This seems correct for the "4 BigSet.png" if it's 16px sprites
 ENV_SPRITE_COLS = 8
-PADDING = 0
 sprite_map = {}
 
+# --- Helper functions ---
 
+
+# Function to scale a single sprite to the config.square_size
 def scale(sprite, size=-1):
     if size == -1:  # this is required for dynamically setting the config
         size = config.square_size
@@ -16,104 +19,118 @@ def scale(sprite, size=-1):
     return pygame.transform.scale(sprite, (size, size))
 
 
+# Function to load a sprite sheet and chop it into individual sprites
 def load_sprite_sheet(filename, rows, cols, size):
     pygame.display.set_mode(
         (
-            cols * (size + PADDING) + PADDING,
-            rows * (size + PADDING) + PADDING,
+            cols * size,
+            rows * size,
         )
     )
+    try:
+        sheet = pygame.image.load(filename).convert_alpha()
+        sheet_rect = sheet.get_rect()
 
-    sheet = pygame.image.load(filename).convert_alpha()
-    sheet_rect = sheet.get_rect()
+        sprites = []
+        # Iterate through the sheet to extract subsurfaces
+        for y_offset in range(rows):  # Use row index for cleaner loop
+            if (
+                y_offset * size > sheet_rect.height
+            ):  # Check if we're trying to go beyond sheet height
+                break  # Avoid IndexError if sheet is smaller than expected rows
+            row_sprites = []
+            for x_offset in range(cols):  # Use col index
+                if (
+                    x_offset * size > sheet_rect.width
+                ):  # Check if we're trying to go beyond sheet width
+                    break  # Avoid IndexError if sheet is smaller than expected cols
 
-    sprites = []
-    for y in range(0, sheet_rect.height, size):
-        if y + size > sheet_rect.height:
-            continue
+                # Ensure the subsurface doesn't go out of bounds of the actual image
+                sub_rect_x = x_offset * size
+                sub_rect_y = y_offset * size
+                sub_rect_width = min(size, sheet_rect.width - sub_rect_x)
+                sub_rect_height = min(size, sheet_rect.height - sub_rect_y)
 
-        row = []
-        for x in range(0, sheet_rect.width, size):
-            if x + size > sheet_rect.width:
-                continue
-
-            row.append(sheet.subsurface(pygame.Rect(x, y, size, size)).copy())
-        if row:
-            sprites.append(row)
+                if sub_rect_width > 0 and sub_rect_height > 0:
+                    row_sprites.append(
+                        sheet.subsurface(
+                            pygame.Rect(
+                                sub_rect_x, sub_rect_y, sub_rect_width, sub_rect_height
+                            )
+                        ).copy()
+                    )
+            if row_sprites:  # Only add if row has sprites
+                sprites.append(row_sprites)
+    except pygame.error as e:
+        print(f"Error loading sprite sheet {filename}: {e}")
+        sprites = []  # Return empty if error
 
     return sprites
 
 
+# Function to load fire sprites specifically
 def load_fire_sprites():
     fires = []
-    pygame.display.set_mode((1024, 1024))
-    for i in range(1, 5):
-        sheet = pygame.image.load("assets/Fogo_" + str(i) + ".png").convert_alpha()
-        piece = 1024 / 28
-        offset = piece * 16
-        frame = scale(
-            sheet.subsurface(pygame.Rect(offset, offset, piece * 4, piece * 4)).copy()
-        )
-        fires.append(frame)
+    try:
+        for i in range(1, 5):  # Assumes Fogo_1.png to Fogo_4.png
+            filepath = os.path.join("assets", "Fogo_" + str(i) + ".png")
+            sheet = pygame.image.load(filepath).convert_alpha()
+            # These values (1024/28, 16, piece*4) suggest a specific internal layout of your fire images
+            # If Fogo_*.png are individual frames of fire animation, they should be loaded differently.
+            # Assuming these are sheets that contain a specific fire sprite
+            piece = 1024 / 28
+            offset = piece * 16  # This offset picks a specific part of the image
+            frame = scale(
+                sheet.subsurface(
+                    pygame.Rect(offset, offset, piece * 4, piece * 4)
+                ).copy()
+            )
+            fires.append(frame)
+    except pygame.error as e:
+        print(f"Error loading fire sprite Fogo_{i}.png: {e}")
+        fires = []  # Return empty if error
 
     return fires
 
 
+# --- Core sprite loading ---
+
+# Load the main environment sprite sheet
+# Pygame should only be initialized once for the main display loop.
+# Initializing and quitting pygame multiple times in load_sprite_sheet/load_fire_sprites
+# is generally bad practice and can lead to issues.
+# Let's ensure Pygame is initialized only once for the entire script.
+
+# Pygame initialization for the whole sprites.py file
+# A temporary display surface is still needed for image loading
+
+
 def display_sheet(sprites, rows, cols):
     pygame.init()
-    screen = pygame.display.set_mode(
-        (
-            cols * (PADDING + config.square_size) + PADDING,
-            rows * (PADDING + config.square_size) + PADDING,
-        )
-    )
+    pygame.display.set_mode(
+        (1, 1), pygame.HIDDEN
+    )  # Create a hidden display to avoid flicker
+    pygame.display.set_mode((cols * config.square_size, rows * config.square_size))
     clock = pygame.time.Clock()
 
-    running = True
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
 
-        screen.fill((255, 255, 255))
-        tile_size = config.square_size + PADDING  # space between sprites (padding)
-
-        for row in range(rows):
-            for col in range(cols):
-                x = PADDING + col * tile_size
-                y = PADDING + row * tile_size
-                screen.blit(sprites[row][col], (x, y))
-
-        pygame.display.flip()
-        clock.tick(60)
-
-    pygame.quit()
+# --- Character and item specific sprite processing functions ---
 
 
-def test_sprite(sprite, size):
-    pygame.init()
-    screen = pygame.display.set_mode((2 * PADDING + size, 2 * PADDING + size))
-    clock = pygame.time.Clock()
+def fix_firefighter(sprite_100x100_sheet, with_shadow=True):
+    # This function expects a 100x100 sprite from the sheet and extracts a 24x24 sub-sprite
+    # and recolors it.
+    size = 24  # The actual size of the firefighter sprite within the 100x100 block
+    x_offset_in_100 = (100 - size) // 2  # = 38 (instead of 42 based on (100-24)/2)
+    y_offset_in_100 = (100 - size) // 2  # = 38
 
-    running = True
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-
-        screen.fill((40, 40, 40))
-        screen.blit(sprite, (PADDING, PADDING))
-
-        pygame.display.flip()
-        clock.tick(160)
-
-    pygame.quit()
-
-
-def fix_firefighter(sprite, with_shadow=True):
-    size = 24
-    x = (100 - size) // 2  # = 42
-    y = (100 - size) // 2  # = 42
+    # Use the actual size to ensure the rect is correct
+    firefighter_sprite_cut = sprite_100x100_sheet.subsurface(
+        pygame.Rect(x_offset_in_100, y_offset_in_100, size, size)
+    ).copy()
+    firefighter_sprite_scaled = scale(
+        firefighter_sprite_cut
+    )  # Scale to config.square_size
 
     def hex_to_rgba(hex_color):
         hex_color = hex_color.lstrip("#").lstrip("0x")
@@ -125,7 +142,7 @@ def fix_firefighter(sprite, with_shadow=True):
     colors_to_replace = [
         (hex_to_rgba(old), hex_to_rgba(new))
         for old, new in [
-            ("#607581", "#672020"),
+            ("#607581", "#672020"),  # Example color changes
             ("#C2CDD2", "#8F3838"),
             ("#9BADB7", "#672020"),
             ("#C5D0D5", "#8F3838"),
@@ -138,30 +155,44 @@ def fix_firefighter(sprite, with_shadow=True):
         ]
     ]
 
-    firefigther = scale(sprite.subsurface(pygame.Rect(x, y, size, size)).copy())
-    shadow = load_sprite_sheet("assets/Soldier-Shadow.png", 1, 1, 100)[0][0]
-    shadow.fill((0, 0, 0, 128), special_flags=pygame.BLEND_RGBA_MULT)
-
-    shadow = scale(shadow.subsurface(pygame.Rect(x, y, size, size)).copy())
-
-    width, height = firefigther.get_size()
+    # Apply color replacements
+    width, height = firefighter_sprite_scaled.get_size()
     for x in range(width):
         for y in range(height):
+            current_color = firefighter_sprite_scaled.get_at((x, y))
             for old_color, new_color in colors_to_replace:
-                if firefigther.get_at((x, y)) == old_color:
-                    firefigther.set_at((x, y), new_color)
+                # Compare RGBA values, not just RGB, as alpha can be part of it
+                if current_color == old_color:
+                    firefighter_sprite_scaled.set_at((x, y), new_color)
+                    break  # Move to next pixel after replacement
 
-    if not with_shadow:
-        return firefigther
-
-    shadow.blit(firefigther, (0, 0))
-
-    return shadow
+    if with_shadow:
+        # Load and process shadow
+        # Ensure Soldier-Shadow.png is a 100x100 sprite as well if it's from a sheet
+        shadow_sheet = load_sprite_sheet("assets/Soldier-Shadow.png", 1, 1, 100)
+        if shadow_sheet and shadow_sheet[0]:
+            raw_shadow = shadow_sheet[0][0]
+            # Extract the same 24x24 sub-sprite and scale it
+            shadow_cut = raw_shadow.subsurface(
+                pygame.Rect(x_offset_in_100, y_offset_in_100, size, size)
+            ).copy()
+            shadow_scaled = scale(shadow_cut)
+            shadow_scaled.fill((0, 0, 0, 128), special_flags=pygame.BLEND_RGBA_MULT)
+            shadow_scaled.blit(
+                firefighter_sprite_scaled, (0, 0)
+            )  # Blit the colored sprite onto the shadow
+            return shadow_scaled
+        else:
+            print(
+                "Warning: Soldier-Shadow.png not loaded correctly. Returning firefighter without shadow."
+            )
+            return firefighter_sprite_scaled
+    else:
+        return firefighter_sprite_scaled
 
 
 def fix_cat(sprite):
-    PADDING = 24
-    return scale(sprite, config.square_size - PADDING)
+    return scale(sprite, config.square_size - 24)
 
 
 def load_srpite_map():
@@ -281,26 +312,26 @@ def load_srpite_map():
 
     # fix top wall black strips
     w = scale(sprite_map["wall"]["top"]).get_width()
-    WALL_PADDING = 7
+    WA = 7
     for y in range(config.square_size):
-        for x in range(WALL_PADDING):
+        for x in range(WA):
             sprite_map["wall"]["top"].set_at(
-                (x, y), sprite_map["wall"]["top"].get_at((WALL_PADDING, y))
+                (x, y), sprite_map["wall"]["top"].get_at((WA, y))
             )
             sprite_map["wall"]["top"].set_at(
                 (w - 1 - x, y),
-                sprite_map["wall"]["top"].get_at((w - WALL_PADDING - 6, y)),
+                sprite_map["wall"]["top"].get_at((w - WA - 6, y)),
             )
             sprite_map["wall"]["front"].set_at(
-                (x, y), sprite_map["wall"]["front"].get_at((WALL_PADDING, y))
+                (x, y), sprite_map["wall"]["front"].get_at((WA, y))
             )
             sprite_map["wall"]["front"].set_at(
                 (w - 1 - x, y),
-                sprite_map["wall"]["front"].get_at((w - WALL_PADDING - 6, y)),
+                sprite_map["wall"]["front"].get_at((w - WA - 6, y)),
             )
 
     for x in range(w):
-        for y in range(WALL_PADDING):
+        for y in range(WA):
             c = sprite_map["wall"]["front"].get_at((x, 0))
             sprite_map["picture"].set_at((x, y), c)
             sprite_map["window"].set_at((x, y), c)

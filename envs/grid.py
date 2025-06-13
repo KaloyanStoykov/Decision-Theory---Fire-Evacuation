@@ -24,12 +24,22 @@ class Grid:
     target: Cat = None
     agent: FireFighter = None
 
-    def __init__(self, room_factory: RoomFactory, np_random=np.random):
+    def __init__(
+        self,
+        room_factory: RoomFactory,
+        static_mode=False,
+        initial_agent_pos=None,
+        initial_target_pos=None,
+        np_random=np.random,
+    ):
         self.np = np_random
         self.room_factory = room_factory
         self.is_animation_on_going = False
         self.extinguishing_tile = None
         self.extinguishing_state = 0
+        self.static_mode = static_mode
+        self.initial_agent_pos = initial_agent_pos
+        self.initial_target_pos = initial_target_pos
         self.create_grid()
 
     def create_grid(self):
@@ -47,15 +57,51 @@ class Grid:
                 [tile for row in self.tiles for tile in row],
             )
         )
-        target_location: Tile = (
-            self.np.choice(free_tiles)
-            if config.random_target_location
-            else free_tiles[0]
-        )
+        # target_location: Tile = self.np.choice(free_tiles)
+        target_location = free_tiles[0]
         free_tiles.remove(target_location)
         self.target = Cat(np.array([target_location.x, target_location.y]))
         agent_location: Tile = self.np.choice(free_tiles)
         self.agent = FireFighter(np.array([agent_location.x, agent_location.y]))
+
+    def _create_walls(self):
+        positions = [
+            (0, 2),
+            (1, 2),
+            (1, 3),
+            (2, 3),
+            (3, 3),
+            (3, 0),
+            (3, 1),
+        ]
+
+        for pos in positions:
+            self.tiles[pos[0]][pos[1]] = Wall(pos[0], pos[1])
+
+        for pos in positions:
+            self.tiles[pos[0]][pos[1]].register_neighbors(self.tiles)
+
+    def _lay_floors(self):
+        for x in range(config.grid_size):
+            for y in range(config.grid_size):
+                if not self.tiles[x][y]:
+                    self.tiles[x][y] = Floor(
+                        x,
+                        y,
+                        self.tiles,
+                        FloorType.BLUE,
+                    )
+
+    def _create_items(self):
+        self.tiles[0][3] = Item(self.tiles[0][3], Items.BOOKSHELF_FULL)
+        self.tiles[1][0] = Item(self.tiles[1][0], Items.BED_RED)
+        self.tiles[2][0] = Item(self.tiles[2][0], Items.POT_GREEN)
+        # pass
+        # floor = self.random_empty_space()
+        # if not floor:
+        #     return
+
+        # self.tiles[floor.x][floor.y] = Item(floor, Items.RADIO)
 
     def is_agent_dead(self):
         return self.tiles[self.agent.x][self.agent.y].is_on_fire
@@ -75,7 +121,21 @@ class Grid:
                     next_agent_location[1]
                 ].is_traversable
             ):
-                self._update_tiles()
+                # If static_mode is True, fire and self-extinguish chances should be skipped
+                if not self.static_mode:
+                    self._update_tiles()
+                    if decide_action(config.chance_of_catching_fire):
+                        tile = random_tile(
+                            self.tiles, self.target, self.agent, inflammable=True
+                        )
+                        if tile:
+                            tile.set_on_fire()
+                    if decide_action(config.chance_of_self_extinguish):
+                        tile = random_tile(
+                            self.tiles, self.target, self.agent, burning=True
+                        )
+                        if tile:
+                            tile.put_out_fire()
                 return False
 
             self.agent.move(next_agent_location)
@@ -112,17 +172,21 @@ class Grid:
                     self.agent.kill()
                     self.is_animation_on_going = True
 
-        self._update_tiles()
+        # Only update tiles for dynamic fire, not for static mode
+        if not self.static_mode:
+            self._update_tiles()
 
-        if decide_action(config.chance_of_catching_fire):
-            tile = random_tile(self.tiles, self.target, self.agent, inflammable=True)
-            if tile:
-                tile.set_on_fire()
+            if decide_action(config.chance_of_catching_fire):
+                tile = random_tile(
+                    self.tiles, self.target, self.agent, inflammable=True
+                )
+                if tile:
+                    tile.set_on_fire()
 
-        if decide_action(config.chance_of_self_extinguish):
-            tile = random_tile(self.tiles, self.target, self.agent, burning=True)
-            if tile:
-                tile.put_out_fire()
+            if decide_action(config.chance_of_self_extinguish):
+                tile = random_tile(self.tiles, self.target, self.agent, burning=True)
+                if tile:
+                    tile.put_out_fire()
 
         return True
 
