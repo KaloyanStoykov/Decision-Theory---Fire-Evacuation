@@ -105,7 +105,7 @@ class Window:
         pygame.display.flip()
 
     def _draw_yes_no_buttons(self, hover_yes, hover_no):
-        continue_text = self._small_font.render("Continue?", True, WHITE)
+        continue_text = self._extra_small_font.render("Continue?", True, WHITE)
         self._screen.blit(
             continue_text,
             continue_text.get_rect(center=(self._center, self._center - 20)),

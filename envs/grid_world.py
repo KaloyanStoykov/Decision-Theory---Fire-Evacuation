@@ -4,21 +4,18 @@ import numpy as np
 from envs.grid import Grid
 from envs.constants import Action, config
 from envs.ui.window import Window
+from envs.ui.training_room import TrainingRoom
 
 
 class FireFighterWorld(gym.Env):
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": config.fps}
 
     def __init__(self, render_mode=None):
-        self.grid = Grid(self.np_random)
+        self.grid = Grid(TrainingRoom(), self.np_random)
         self.points = config.initial_points
 
         self.observation_space = spaces.Tuple(
-            # (spaces.Box(0, size - 1, shape=(2,), dtype=int),)  # agent
-            (
-                spaces.Discrete(config.grid_size),
-                spaces.Discrete(config.grid_size),
-            )  # agent
+            (spaces.Box(0, config.grid_size - 1, shape=(2,), dtype=int),)  # agent
         )
 
         self.action_space = spaces.Discrete(len(Action))
@@ -29,28 +26,23 @@ class FireFighterWorld(gym.Env):
         self.window = Window() if self.render_mode == "human" else None
 
     def _get_obs(self):
-        return (self.grid.agent.x, self.grid.agent.y)
+        return (self.grid.agent.location,)
 
     def _get_info(self):
         return {}
-
-    def get_possible_actions(self):
-        return np.array(self.grid.get_possible_actions())
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
 
         if seed is not None:
-            self.grid = Grid(self.np_random)
+            self.grid = Grid(TrainingRoom(), self.np_random)
 
         self.grid.create_grid()
-        observation = self._get_obs()
-        info = self._get_info()
 
         if self.render_mode == "human":
             self._render_frame()
 
-        return observation, info
+        return self._get_obs(), self._get_info()
 
     def step(self, action):
         is_legal_move = self.grid.update(list(Action)[action])
@@ -66,6 +58,8 @@ class FireFighterWorld(gym.Env):
             terminated = True
             if self.grid.is_agent_dead():
                 reward = config.death_punishment
+            else:
+                reward = config.success_reward
 
         if self.render_mode == "human":
             self._render_frame()

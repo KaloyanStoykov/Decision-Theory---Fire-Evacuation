@@ -1,4 +1,5 @@
 from enum import Enum
+import numpy as np
 
 
 class Config:
@@ -15,12 +16,15 @@ class Config:
         self.chance_of_self_extinguish = 0.004
         self.chance_of_wall_being_window = 0.1
         self.chance_of_wall_being_picture = 0.1
+        self.random_target_location = True
+        self.fire_state_count = 4
 
         self.initial_points = 1000
         self.item_damage_punishment = 10
         self.time_step_punishment = 1
         self.death_punishment = -10
         self.illeagal_move_punishment = -10
+        self.success_reward = 10
 
 
 config = Config()
@@ -92,4 +96,4 @@ class Action(Enum):
     PUT_OUT_FIRE = 4
 
 
-type Observation = tuple[int, int]
+type Observation = tuple[np.ndarray]

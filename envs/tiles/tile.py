@@ -2,8 +2,6 @@ from envs.ui.sprites import sprite_map
 from envs.tiles.base import Base
 from envs.constants import config
 
-FIRE_STATE_COUNT = len(sprite_map["fires"])
-
 
 class Tile(Base):
     is_on_fire = False
@@ -14,6 +12,7 @@ class Tile(Base):
 
     def __init__(self, x, y):
         super().__init__(x, y)
+        self._fire_state_count = len(sprite_map["fires"])
 
     def set_on_fire(self):
         if not self.is_inflammable:
@@ -39,4 +38,4 @@ class Tile(Base):
 
     def animate(self):
         if self.is_on_fire:
-            self._fire_state = (self._fire_state + 1) % FIRE_STATE_COUNT
+            self._fire_state = (self._fire_state + 1) % self._fire_state_count

@@ -3,15 +3,21 @@ import numpy as np
 from envs.constants import Action, config
 from envs.ui.window import Window
 from envs.grid import Grid
-import threading
+from envs.ui.sprites import load_srpite_map
+from envs.ui.play_room import PlayRoom
 
-window = Window()
-grid = Grid()
+config.grid_size = 8
+config.window_size = 512
+config.square_size = int(config.window_size / config.grid_size)
 config.fps = 60
 config.animation_delay = 60 / 8
-config.chance_of_catching_fire = 0.02
-config.chance_of_self_extinguish = 0.002
-pressed_keys = pygame.key.get_pressed()
+config.chance_of_catching_fire = 0.012
+config.chance_of_self_extinguish = config.chance_of_catching_fire / 15
+
+load_srpite_map()
+window = Window()
+grid = Grid(PlayRoom())
+
 running = True
 
 

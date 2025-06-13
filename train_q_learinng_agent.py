@@ -2,6 +2,7 @@ import gymnasium as gym
 from q_learning.agent import Agent
 from q_learning.constants import N_EPISODES, RENDER
 from envs.constants import config
+from envs.ui.sprites import load_srpite_map
 
 
 def create_env():
@@ -16,8 +17,10 @@ def create_env():
     return env
 
 
-agent = Agent()
 config.chance_of_catching_fire = 0
+config.random_target_location = False
+load_srpite_map()
+agent = Agent()
 
 
 def run():

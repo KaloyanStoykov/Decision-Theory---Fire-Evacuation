@@ -4,8 +4,6 @@ from envs.tiles.tile import Tile
 from envs.constants import Items, config
 from envs.ui.sprites import sprite_map
 
-FIRE_STATE_COUNT = len(sprite_map["fires"])
-
 
 def durability_and_image_for_item(item_type: Items):
     match item_type:

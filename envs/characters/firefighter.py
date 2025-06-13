@@ -2,9 +2,6 @@ import numpy as np
 from envs.ui.sprites import sprite_map
 from envs.tiles.base import Base
 
-IDLE_STATE_COUNT = len(sprite_map["firefighter"]["idle"])
-DEATH_STATE_COUNT = len(sprite_map["firefighter"]["dying"])
-
 
 class FireFighter(Base):
     _anim_state = 0
@@ -14,6 +11,8 @@ class FireFighter(Base):
         (x, y) = location
         super().__init__(x, y)
         self.location = location
+        self._death_state_count = len(sprite_map["firefighter"]["dying"])
+        self._idle_state_count = len(sprite_map["firefighter"]["idle"])
 
     def move(self, x: int, y: int):
         self.x = x
@@ -32,16 +31,16 @@ class FireFighter(Base):
         if self.is_alive:
             self._set_image(sprite_map["firefighter"]["idle"][self._anim_state])
         else:
-            if self._anim_state < DEATH_STATE_COUNT - 1:
+            if self._anim_state < self._death_state_count - 1:
                 self._set_image(sprite_map["firefighter"]["dying"][self._anim_state])
 
         return super().draw(canvas)
 
     def animate(self):
         if self.is_alive:
-            self._anim_state = (self._anim_state + 1) % IDLE_STATE_COUNT
+            self._anim_state = (self._anim_state + 1) % self._idle_state_count
         else:
-            if self._anim_state < DEATH_STATE_COUNT - 1:
+            if self._anim_state < self._death_state_count - 1:
                 self._anim_state += 1
             else:
                 self._anim_state = 0

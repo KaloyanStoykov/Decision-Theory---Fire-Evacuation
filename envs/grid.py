@@ -9,6 +9,7 @@ from envs.characters.cat import Cat
 from envs.characters.firefighter import FireFighter
 from envs.constants import Action
 from envs.ui.sprites import sprite_map
+from envs.ui.room import RoomFactory
 
 ACTION_TO_DIRECTION = {
     Action.RIGHT.value: np.array([1, 0]),
@@ -20,8 +21,12 @@ ACTION_TO_DIRECTION = {
 
 
 class Grid:
-    def __init__(self, np_random=np.random):
+    target: Cat = None
+    agent: FireFighter = None
+
+    def __init__(self, room_factory: RoomFactory, np_random=np.random):
         self.np = np_random
+        self.room_factory = room_factory
         self.is_animation_on_going = False
         self.extinguishing_tile = None
         self.extinguishing_state = 0
@@ -32,9 +37,9 @@ class Grid:
             [None for _ in range(config.grid_size)] for _ in range(config.grid_size)
         ]
 
-        self._create_walls()
-        self._lay_floors()
-        self._create_items()
+        self.room_factory.create_walls(self)
+        self.room_factory.lay_floors(self)
+        self.room_factory.create_items(self)
 
         free_tiles: list[Tile] = list(
             filter(
@@ -42,51 +47,15 @@ class Grid:
                 [tile for row in self.tiles for tile in row],
             )
         )
-        # target_location: Tile = self.np.choice(free_tiles)
-        target_location = free_tiles[0]
+        target_location: Tile = (
+            self.np.choice(free_tiles)
+            if config.random_target_location
+            else free_tiles[0]
+        )
         free_tiles.remove(target_location)
         self.target = Cat(np.array([target_location.x, target_location.y]))
         agent_location: Tile = self.np.choice(free_tiles)
         self.agent = FireFighter(np.array([agent_location.x, agent_location.y]))
-
-    def _create_walls(self):
-        positions = [
-            (0, 2),
-            (1, 2),
-            (1, 3),
-            (2, 3),
-            (3, 3),
-            (3, 0),
-            (3, 1),
-        ]
-
-        for pos in positions:
-            self.tiles[pos[0]][pos[1]] = Wall(pos[0], pos[1])
-
-        for pos in positions:
-            self.tiles[pos[0]][pos[1]].register_neighbors(self.tiles)
-
-    def _lay_floors(self):
-        for x in range(config.grid_size):
-            for y in range(config.grid_size):
-                if not self.tiles[x][y]:
-                    self.tiles[x][y] = Floor(
-                        x,
-                        y,
-                        self.tiles,
-                        FloorType.BLUE,
-                    )
-
-    def _create_items(self):
-        self.tiles[0][3] = Item(self.tiles[0][3], Items.BOOKSHELF_FULL)
-        self.tiles[1][0] = Item(self.tiles[1][0], Items.BED_RED)
-        self.tiles[2][0] = Item(self.tiles[2][0], Items.POT_GREEN)
-        # pass
-        # floor = self.random_empty_space()
-        # if not floor:
-        #     return
-
-        # self.tiles[floor.x][floor.y] = Item(floor, Items.RADIO)
 
     def is_agent_dead(self):
         return self.tiles[self.agent.x][self.agent.y].is_on_fire
@@ -209,8 +178,8 @@ class Grid:
             for tile in row:
                 if (
                     isinstance(tile, Floor)
-                    and not is_occupied(tile, self.target)
-                    and not is_occupied(tile, self.agent)
+                    and (self.target is None or not is_occupied(tile, self.target))
+                    and (self.agent is None or not is_occupied(tile, self.agent))
                 ):
                     possible_tiles.append(tile)
 

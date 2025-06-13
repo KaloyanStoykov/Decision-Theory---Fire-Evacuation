@@ -21,8 +21,9 @@ visualizer = Visualizer(
 )
 
 
-def encode_observation(observation):
-    return observation[0] * config.grid_size + observation[1]
+def encode_observation(observation: Observation):
+    agent_location = observation[0]
+    return agent_location[0] * config.grid_size + agent_location[1]
 
 
 class Agent:
@@ -65,13 +66,11 @@ class Agent:
             q_value + LEARNING_RATE * temporal_difference
         )
 
-        if not DEBUG:
-            return
-
-        self.counter += 1
-        if self.counter == DEBUG_UPDATE:
-            self.counter = 0
-            visualizer.update(self.q_table, self.epsilon, temporal_difference)
+        if DEBUG:
+            self.counter += 1
+            if self.counter == DEBUG_UPDATE:
+                self.counter = 0
+                visualizer.update(self.q_table, self.epsilon, temporal_difference)
 
     def decay_epsilon(self):
         self.epsilon = max(FINAL_EPSILON, self.epsilon - EPSILON_DECAY)

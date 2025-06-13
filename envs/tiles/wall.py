@@ -10,7 +10,7 @@ def is_tile_above_wall(tiles, x, y):
 
 
 def is_tile_below_empty(tiles, x, y):
-    return y == len(tiles) or isinstance(tiles[x][y + 1], Wall)
+    return y >= len(tiles) - 1 or isinstance(tiles[x][y + 1], Wall)
 
 
 class Wall(Tile):
