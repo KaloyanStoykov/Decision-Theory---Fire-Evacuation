@@ -1,4 +1,7 @@
 from envs.ui.sprites import *
+from envs.ui.sprites import load_srpite_map
+
+load_srpite_map()
 
 if __name__ == "__main__":
     # test_sprite(sprite_map["firefighter"]["shadow"], 32)

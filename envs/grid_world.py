@@ -49,10 +49,10 @@ class FireFighterWorld(gym.Env):
         # Re-create grid with specified initial positions if in static mode for MDP
         self.grid = Grid(
             TrainingRoom(),
-            self.np_random,
             self.static_mode,
             initial_agent_pos,
             initial_target_pos,
+            self.np_random,
         )
 
         if self.render_mode == "human":

@@ -22,11 +22,10 @@ class Config:
         self.fire_state_count = 4
 
         self.initial_points = 1000
-        self.item_damage_punishment = 10
-        self.time_step_punishment = 1
-        self.death_punishment = -10
+        self.time_step_punishment = 0.1
+        self.death_punishment = -100
         self.illeagal_move_punishment = -10
-        self.success_reward = 10
+        self.success_reward = 100
 
         # --- IMPORTANT: These lines must be present in your Config class ---
         self.evacuation_success_reward = 1000  # Reward for reaching the cat/target
