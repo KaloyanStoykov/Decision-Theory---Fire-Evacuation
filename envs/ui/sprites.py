@@ -21,12 +21,7 @@ def scale(sprite, size=-1):
 
 # Function to load a sprite sheet and chop it into individual sprites
 def load_sprite_sheet(filename, rows, cols, size):
-    pygame.display.set_mode(
-        (
-            cols * size,
-            rows * size,
-        )
-    )
+    pygame.display.set_mode((cols * size, rows * size))
     try:
         sheet = pygame.image.load(filename).convert_alpha()
         sheet_rect = sheet.get_rect()
@@ -37,13 +32,28 @@ def load_sprite_sheet(filename, rows, cols, size):
             if (
                 y_offset * size > sheet_rect.height
             ):  # Check if we're trying to go beyond sheet height
-                break  # Avoid IndexError if sheet is smaller than expected rows
+                raise IndexError(
+                    "Sheet is too small to fit the requested rows. Requested rows: "
+                    + str(rows)
+                    + ", sheet height: "
+                    + str(sheet_rect.height)
+                    + ", y_offset: "
+                    + str(y_offset)
+                )
+
             row_sprites = []
             for x_offset in range(cols):  # Use col index
                 if (
                     x_offset * size > sheet_rect.width
                 ):  # Check if we're trying to go beyond sheet width
-                    break  # Avoid IndexError if sheet is smaller than expected cols
+                    raise IndexError(
+                        "Sheet is too small to fit the requested columns. Requested columns: "
+                        + str(cols)
+                        + ", sheet width: "
+                        + str(sheet_rect.width)
+                        + ", x_offset: "
+                        + str(x_offset)
+                    )
 
                 # Ensure the subsurface doesn't go out of bounds of the actual image
                 sub_rect_x = x_offset * size
@@ -202,7 +212,7 @@ def load_srpite_map():
     env_sprites = [
         [scale(sprite) for sprite in sprite_list]
         for sprite_list in load_sprite_sheet(
-            "assets/4 BigSet.png", ENV_SPRITE_COLS, ENV_SPRITE_ROWS, 16
+            "assets/4 BigSet.png", ENV_SPRITE_ROWS, ENV_SPRITE_COLS, 16
         )
     ]
 
