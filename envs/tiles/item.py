@@ -98,7 +98,7 @@ class Item(Tile):
     def update(self):
         super().update()
 
-        if self.is_on_fire:
+        if self.is_on_fire and not config.static_fire_mode:
             self.damage()
 
             if self.is_destroyed:

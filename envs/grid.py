@@ -83,7 +83,7 @@ class Grid:
                 ].is_traversable
             ):
                 # If static_mode is True, fire and self-extinguish chances should be skipped
-                if not self.static_mode:
+                if not config.static_fire_mode:
                     self._update_tiles()
                     if decide_action(config.chance_of_catching_fire):
                         tile = random_tile(
@@ -134,7 +134,7 @@ class Grid:
                     self.is_animation_on_going = True
 
         # Only update tiles for dynamic fire, not for static mode
-        if not self.static_mode:
+        if not config.static_fire_mode:
             self._update_tiles()
 
             if decide_action(config.chance_of_catching_fire):

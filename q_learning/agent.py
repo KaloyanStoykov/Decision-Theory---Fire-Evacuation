@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import os
 import numpy as np
 from envs.constants import Action, Observation, config
@@ -6,6 +5,7 @@ from q_learning.debug import Visualizer
 
 from q_learning.constants import (
     DISCOUNT_FACTOR,
+    SAVE_Q_TABLE,
     LEARNING_RATE,
     EPSILON_DECAY,
     FINAL_EPSILON,
@@ -76,4 +76,5 @@ class Agent:
         self.epsilon = max(FINAL_EPSILON, self.epsilon - EPSILON_DECAY)
 
     def save(self):
-        np.save(FILE_NAME, self.q_table)
+        if SAVE_Q_TABLE:
+            np.save(FILE_NAME, self.q_table)

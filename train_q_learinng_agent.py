@@ -17,7 +17,7 @@ def create_env():
     return env
 
 
-config.chance_of_catching_fire = 0
+config.static_fire_mode = True
 config.random_target_location = False
 load_srpite_map()
 agent = Agent()

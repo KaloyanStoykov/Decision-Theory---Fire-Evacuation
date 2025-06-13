@@ -18,7 +18,7 @@ class FireFighterWorld(gym.Env):
             (spaces.Box(0, config.grid_size - 1, shape=(2,), dtype=int),)  # agent
         )
 
-        self.action_space = spaces.Discrete(len(Action))
+        self.action_space = spaces.Discrete(len(Action) - 1)
 
         assert render_mode is None or render_mode in self.metadata["render_modes"]
         self.render_mode = render_mode
@@ -65,21 +65,32 @@ class FireFighterWorld(gym.Env):
         is_legal_move = self.grid.update(list(Action)[action])
 
         reward = config.time_step_punishment  # Default punishment for each step
+        reward += config.distance_reward * (
+            config.max_distance
+            - np.linalg.norm(self.grid.agent.location - self.grid.target.location)
+        )
 
         terminated = False
 
         if not is_legal_move:
-            reward = config.illeagal_move_punishment  # Punish illegal moves immediately
+            reward += (
+                config.illeagal_move_punishment
+            )  # Punish illegal moves immediately
+            return self._get_obs(), reward, terminated, False, self._get_info()
 
         # Check for termination conditions *after* agent movement/action
         if self.grid.is_agent_dead():
             terminated = True
-            reward = config.death_punishment  # Large negative reward for death
+            reward += config.death_punishment  # Large negative reward for death
         elif np.array_equal(self.grid.agent.location, self.grid.target.location):
             terminated = True
-            reward = (
+            reward += (
                 config.evacuation_success_reward
             )  # Large positive reward for reaching target
+
+        # print(
+        #     f"Reward: {reward} for action {list(Action)[action]} at {self.grid.agent.location}"
+        # )
 
         # For the MDP, 'chance_of_catching_fire' and 'chance_of_self_extinguish' are 0 (static)
         # These are handled within grid.update and should be skipped if static_mode is True.
@@ -89,7 +100,13 @@ class FireFighterWorld(gym.Env):
         if self.render_mode == "human":
             self._render_frame()
 
-        return self._get_obs(), reward, terminated, False, self._get_info()
+        return (
+            self._get_obs(),
+            max(min(reward, config.max_reward), config.min_reward),  # clip reward
+            terminated,
+            False,
+            self._get_info(),
+        )
 
     def render(self):
         if self.render_mode != "human":

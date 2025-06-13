@@ -21,16 +21,17 @@ class Config:
         self.random_target_location = True
         self.fire_state_count = 4
 
-        self.initial_points = 1000
-        self.time_step_punishment = 0.1
+        self.min_reward = -100
+        self.max_reward = 100
+        self.time_step_punishment = -0.1
         self.death_punishment = -100
-        self.illeagal_move_punishment = -10
-        self.success_reward = 100
+        self.illeagal_move_punishment = -100
+        self.success_reward = 10
+        self.distance_reward = 0.1
+        self.max_distance = np.linalg.norm(np.array([0, 0]) - np.array([6, 6]))
 
-        # --- IMPORTANT: These lines must be present in your Config class ---
         self.evacuation_success_reward = 1000  # Reward for reaching the cat/target
         self.discount_factor = 0.95  # Discount factor for MDP Value Iteration
-        # --- END IMPORTANT ---
 
         # Static Fire switch
         self.static_fire_mode = True
