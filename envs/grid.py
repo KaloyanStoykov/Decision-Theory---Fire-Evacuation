@@ -20,11 +20,14 @@ ACTION_TO_DIRECTION = {
 
 
 class Grid:
-    def __init__(self, np_random=np.random):
+    def __init__(self, np_random=np.random, static_mode=False, initial_agent_pos=None, initial_target_pos=None):
         self.np = np_random
         self.is_animation_on_going = False
         self.extinguishing_tile = None
         self.extinguishing_state = 0
+        self.static_mode = static_mode
+        self.initial_agent_pos = initial_agent_pos
+        self.initial_target_pos = initial_target_pos
         self.create_grid()
 
     def create_grid(self):
@@ -42,14 +45,43 @@ class Grid:
                 [tile for row in self.tiles for tile in row],
             )
         )
-        # target_location: Tile = self.np.choice(free_tiles)
-        target_location = free_tiles[0]
-        free_tiles.remove(target_location)
-        self.target = Cat(np.array([target_location.x, target_location.y]))
-        agent_location: Tile = self.np.choice(free_tiles)
-        self.agent = FireFighter(np.array([agent_location.x, agent_location.y]))
+
+        # Handle target and agent placement based on mode
+        # The fix is here: check if initial_agent_pos is not None
+        if self.static_mode and self.initial_agent_pos is not None and self.initial_target_pos is not None: # Fix applied here
+            agent_location_xy = self.initial_agent_pos
+            target_location_xy = self.initial_target_pos
+        else:
+            # Dynamic placement for Q-learning or if initial positions aren't provided
+            if free_tiles: # Ensure there are free tiles
+                # Make sure agent and target don't start on the same tile
+                if len(free_tiles) < 2: # Not enough space for distinct agent/target
+                    print("Warning: Not enough free tiles to place agent and target distinctly.")
+                    # Handle this edge case, maybe place them on the same tile for now
+                    target_tile = self.np.choice(free_tiles)
+                    agent_tile = target_tile
+                else:
+                    target_tile = self.np.choice(free_tiles)
+                    free_tiles.remove(target_tile)
+                    agent_tile = self.np.choice(free_tiles)
+                
+                target_location_xy = np.array([target_tile.x, target_tile.y])
+                agent_location_xy = np.array([agent_tile.x, agent_tile.y])
+            else:
+                raise ValueError("No traversable tiles available to place agent or target.")
+
+
+        self.target = Cat(target_location_xy)
+        self.agent = FireFighter(agent_location_xy)
+
+        # For static mode, ensure fire is set up consistently if required by MDP
+        # Currently, the MDP assumes a static *fire environment* but doesn't explicitly
+        # set fire on tiles in the template grid. If you want static fire *on* certain tiles,
+        # you would add that logic here based on self.static_mode and a predefined list.
+        # For now, chance_of_catching_fire is handled externally.
 
     def _create_walls(self):
+        # Keep walls static and predetermined
         positions = [
             (0, 2),
             (1, 2),
@@ -78,15 +110,10 @@ class Grid:
                     )
 
     def _create_items(self):
+        # Keep items static and predetermined
         self.tiles[0][3] = Item(self.tiles[0][3], Items.BOOKSHELF_FULL)
         self.tiles[1][0] = Item(self.tiles[1][0], Items.BED_RED)
         self.tiles[2][0] = Item(self.tiles[2][0], Items.POT_GREEN)
-        # pass
-        # floor = self.random_empty_space()
-        # if not floor:
-        #     return
-
-        # self.tiles[floor.x][floor.y] = Item(floor, Items.RADIO)
 
     def is_agent_dead(self):
         return self.tiles[self.agent.x][self.agent.y].is_on_fire
@@ -106,7 +133,17 @@ class Grid:
                     next_agent_location[1]
                 ].is_traversable
             ):
-                self._update_tiles()
+                # If static_mode is True, fire and self-extinguish chances should be skipped
+                if not self.static_mode:
+                    self._update_tiles()
+                    if decide_action(config.chance_of_catching_fire):
+                        tile = random_tile(self.tiles, self.target, self.agent, inflammable=True)
+                        if tile:
+                            tile.set_on_fire()
+                    if decide_action(config.chance_of_self_extinguish):
+                        tile = random_tile(self.tiles, self.target, self.agent, burning=True)
+                        if tile:
+                            tile.put_out_fire()
                 return False
 
             self.agent.move(next_agent_location)
@@ -143,17 +180,19 @@ class Grid:
                     self.agent.kill()
                     self.is_animation_on_going = True
 
-        self._update_tiles()
+        # Only update tiles for dynamic fire, not for static mode
+        if not self.static_mode:
+            self._update_tiles()
 
-        if decide_action(config.chance_of_catching_fire):
-            tile = random_tile(self.tiles, self.target, self.agent, inflammable=True)
-            if tile:
-                tile.set_on_fire()
+            if decide_action(config.chance_of_catching_fire):
+                tile = random_tile(self.tiles, self.target, self.agent, inflammable=True)
+                if tile:
+                    tile.set_on_fire()
 
-        if decide_action(config.chance_of_self_extinguish):
-            tile = random_tile(self.tiles, self.target, self.agent, burning=True)
-            if tile:
-                tile.put_out_fire()
+            if decide_action(config.chance_of_self_extinguish):
+                tile = random_tile(self.tiles, self.target, self.agent, burning=True)
+                if tile:
+                    tile.put_out_fire()
 
         return True
 

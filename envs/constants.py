@@ -1,3 +1,5 @@
+# envs/constants.py
+
 from enum import Enum
 
 
@@ -21,6 +23,14 @@ class Config:
         self.time_step_punishment = 1
         self.death_punishment = -10
         self.illeagal_move_punishment = -10
+
+        # --- IMPORTANT: These lines must be present in your Config class ---
+        self.evacuation_success_reward = 1000  # Reward for reaching the cat/target
+        self.discount_factor = 0.95            # Discount factor for MDP Value Iteration
+        # --- END IMPORTANT ---
+
+        # Static Fire switch
+        self.static_fire_mode = True
 
 
 config = Config()
@@ -70,8 +80,6 @@ class Items(Enum):
     STOOL = 14
     DOOR_OPEN = 15
     NIGHTSTAND = 16
-    # DOOR = 17
-    # TRAPDOOR = 18
     TRAPDOOR_OPEN = 19
     BIN = 20
     MODERN_BIN = 21
@@ -89,7 +97,6 @@ class Action(Enum):
     UP = 1
     LEFT = 2
     DOWN = 3
-    PUT_OUT_FIRE = 4
-
+    PUT_OUT_FIRE = 4 # This action should be included if your MDP considers it
 
 type Observation = tuple[int, int]
