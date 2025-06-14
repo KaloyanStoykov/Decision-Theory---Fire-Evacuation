@@ -12,7 +12,6 @@ from q_learning.constants import (
     INITIAL_EPSILON,
     FILE_NAME,
     DEBUG,
-    DEBUG_UPDATE,
 )
 
 
@@ -21,9 +20,10 @@ visualizer = Visualizer(
 )
 
 
-def encode_observation(observation: Observation):
-    agent_location = observation[0]
-    return agent_location[0] * config.grid_size + agent_location[1]
+def get_values(q_table, observation):
+    return q_table[observation[1][0]][observation[1][1]][1 if observation[2] else 0][
+        observation[0][0]
+    ][observation[0][1]]
 
 
 class Agent:
@@ -31,10 +31,21 @@ class Agent:
     counter = 0
 
     def __init__(self):
-        if os.path.exists(FILE_NAME):
+        if not SAVE_Q_TABLE and os.path.exists(FILE_NAME):
+            print("Loading Q-table from file...")
             self.q_table = np.load(FILE_NAME)
         else:
-            self.q_table = np.zeros([config.grid_size * config.grid_size, len(Action)])
+            self.q_table = np.zeros(
+                [
+                    config.grid_size,
+                    config.grid_size,
+                    2,
+                    config.grid_size,
+                    config.grid_size,
+                    len(Action),
+                ]
+            )
+            # target_x, target_y, is_fire_present, agent_x, agent_y, action
 
     def get_action(self, actions: list[Action], obs: Observation) -> int:
         """
@@ -44,9 +55,7 @@ class Agent:
         if np.random.uniform(0, 1) < self.epsilon:
             return actions.sample()
         else:  # with probability (1 - epsilon) act greedily (exploit)
-            action = np.argmax(self.q_table[encode_observation(obs)])
-
-            return action
+            return np.argmax(get_values(self.q_table, obs))
 
     def update(
         self,
@@ -57,20 +66,20 @@ class Agent:
         next_obs: Observation,
     ):
         """Updates the Q-value of an action."""
-        q_value = self.q_table[encode_observation(obs)][action]
-        future_q_value = np.max(self.q_table[encode_observation(next_obs)])
+        q_value = get_values(self.q_table, obs)[action]
+        future_q_value = np.max(get_values(self.q_table, next_obs))
 
         temporal_difference = reward + DISCOUNT_FACTOR * future_q_value - q_value
 
-        self.q_table[encode_observation(obs)][action] = (
-            q_value + LEARNING_RATE * temporal_difference
+        get_values(self.q_table, obs)[action] = max(
+            min(q_value + LEARNING_RATE * temporal_difference, config.max_reward),
+            config.min_reward,
         )
 
         if DEBUG:
-            self.counter += 1
-            if self.counter == DEBUG_UPDATE:
-                self.counter = 0
-                visualizer.update(self.q_table, self.epsilon, temporal_difference)
+            visualizer.update(
+                self.q_table, self.epsilon, temporal_difference, obs[1], obs[2]
+            )
 
     def decay_epsilon(self):
         self.epsilon = max(FINAL_EPSILON, self.epsilon - EPSILON_DECAY)

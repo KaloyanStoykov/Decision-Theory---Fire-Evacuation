@@ -10,13 +10,14 @@ from envs.characters.firefighter import FireFighter
 from envs.constants import Action
 from envs.ui.sprites import sprite_map
 from envs.ui.room import RoomFactory
+from envs.utilities import out_of_grid
 
 ACTION_TO_DIRECTION = {
-    Action.RIGHT.value: np.array([1, 0]),
-    Action.UP.value: np.array([0, -1]),
-    Action.LEFT.value: np.array([-1, 0]),
-    Action.DOWN.value: np.array([0, 1]),
-    Action.PUT_OUT_FIRE.value: np.array([0, 0]),
+    Action.RIGHT: np.array([1, 0]),
+    Action.UP: np.array([0, -1]),
+    Action.LEFT: np.array([-1, 0]),
+    Action.DOWN: np.array([0, 1]),
+    Action.PUT_OUT_FIRE: np.array([0, 0]),
 }
 
 
@@ -53,12 +54,17 @@ class Grid:
 
         free_tiles: list[Tile] = list(
             filter(
-                lambda tile: tile.is_traversable,
+                lambda tile: tile.is_traversable and not tile.is_on_fire,
                 [tile for row in self.tiles for tile in row],
             )
         )
-        # target_location: Tile = self.np.choice(free_tiles)
-        target_location = free_tiles[0]
+
+        target_location = (
+            self.np.choice(free_tiles)
+            if config.random_target_location
+            else free_tiles[0]
+        )
+
         free_tiles.remove(target_location)
         self.target = Cat(np.array([target_location.x, target_location.y]))
         agent_location: Tile = self.np.choice(free_tiles)
@@ -68,93 +74,64 @@ class Grid:
         return self.tiles[self.agent.x][self.agent.y].is_on_fire
 
     def update(self, action: Action = None):
-        if action is not None:
-            next_agent_location = (
-                self.agent.location + ACTION_TO_DIRECTION[action.value]
-            )
-
-            if (
-                next_agent_location[0] < 0
-                or next_agent_location[1] < 0
-                or next_agent_location[0] >= config.grid_size
-                or next_agent_location[1] >= config.grid_size
-                or not self.tiles[next_agent_location[0]][
-                    next_agent_location[1]
-                ].is_traversable
-            ):
-                # If static_mode is True, fire and self-extinguish chances should be skipped
-                if not config.static_fire_mode:
-                    self._update_tiles()
-                    if decide_action(config.chance_of_catching_fire):
-                        tile = random_tile(
-                            self.tiles, self.target, self.agent, inflammable=True
-                        )
-                        if tile:
-                            tile.set_on_fire()
-                    if decide_action(config.chance_of_self_extinguish):
-                        tile = random_tile(
-                            self.tiles, self.target, self.agent, burning=True
-                        )
-                        if tile:
-                            tile.put_out_fire()
-                return False
-
-            self.agent.move(next_agent_location)
-
-            if action == Action.PUT_OUT_FIRE:
-                for movement in [Action.UP, Action.DOWN, Action.LEFT, Action.RIGHT]:
-                    border_tile_location = (
-                        self.agent.location + ACTION_TO_DIRECTION[movement.value]
-                    )
-
-                    if (
-                        border_tile_location[0] < 0
-                        or border_tile_location[1] < 0
-                        or border_tile_location[0] >= config.grid_size
-                        or border_tile_location[1] >= config.grid_size
-                        or not self.tiles[border_tile_location[0]][
-                            border_tile_location[1]
-                        ].is_inflammable
-                    ):
-                        continue
-
-                    if self.tiles[border_tile_location[0]][
-                        border_tile_location[1]
-                    ].is_on_fire:
-                        self.extinguishing_tile = self.tiles[border_tile_location[0]][
-                            border_tile_location[1]
-                        ]
-                        break
-
-            if self.is_agent_dead():
-                if self.is_animation_on_going:
-                    self.is_animation_on_going = self.agent._anim_state != 0
-                else:
-                    self.agent.kill()
-                    self.is_animation_on_going = True
-
-        # Only update tiles for dynamic fire, not for static mode
-        if not config.static_fire_mode:
+        if action is None:
             self._update_tiles()
+            return False
 
-            if decide_action(config.chance_of_catching_fire):
-                tile = random_tile(
-                    self.tiles, self.target, self.agent, inflammable=True
+        is_legal_move = True
+        next_agent_location = self.agent.location + ACTION_TO_DIRECTION[action]
+
+        if (
+            out_of_grid(next_agent_location)
+            or not self._tile_at(next_agent_location).is_traversable
+        ):
+            self._update_tiles()
+            return False
+
+        self.agent.move(next_agent_location)
+
+        if action == Action.PUT_OUT_FIRE:
+            is_legal_move = False
+            for movement in [Action.UP, Action.DOWN, Action.LEFT, Action.RIGHT]:
+                border_tile_location = (
+                    self.agent.location + ACTION_TO_DIRECTION[movement]
                 )
-                if tile:
-                    tile.set_on_fire()
 
-            if decide_action(config.chance_of_self_extinguish):
-                tile = random_tile(self.tiles, self.target, self.agent, burning=True)
-                if tile:
-                    tile.put_out_fire()
+                if (
+                    not out_of_grid(border_tile_location)
+                    and self._tile_at(border_tile_location).is_on_fire
+                ):
+                    self.extinguishing_tile = self._tile_at(border_tile_location)
+                    self.extinguishing_tile.put_out_fire()
+                    is_legal_move = True
+                    break
+        elif self.is_agent_dead():
+            if self.is_animation_on_going:
+                self.is_animation_on_going = self.agent._anim_state != 0
+            else:
+                self.agent.kill()
+                self.is_animation_on_going = True
 
-        return True
+        self._update_tiles()
+
+        return is_legal_move
 
     def _update_tiles(self):
+        if config.static_fire_mode:
+            return
+
         for row in self.tiles:
             for tile in row:
                 tile.update()
+
+        if decide_action(config.chance_of_catching_fire):
+            tile = random_tile(self.tiles, self.target, self.agent, inflammable=True)
+            if tile:
+                tile.set_on_fire()
+        if decide_action(config.chance_of_self_extinguish):
+            tile = random_tile(self.tiles, self.target, self.agent, burning=True)
+            if tile:
+                tile.put_out_fire()
 
     def draw(self, canvas):
         for row in self.tiles:
@@ -165,7 +142,9 @@ class Grid:
         self.agent.draw(canvas)
 
         if self.extinguishing_tile is not None:
+            self.extinguishing_tile.is_on_fire = True
             self.extinguishing_tile.draw(canvas)
+            self.extinguishing_tile.is_on_fire = False
             if self.extinguishing_state < 2:
                 canvas.blit(
                     sprite_map["firefighter"]["put_out_fire"][self.extinguishing_state],
@@ -175,7 +154,6 @@ class Grid:
                     ),
                 )
             else:
-                self.extinguishing_tile.put_out_fire()
                 self.extinguishing_tile = None
                 self.extinguishing_state = 0
                 self.is_animation_on_going = False
@@ -212,3 +190,6 @@ class Grid:
             return None
 
         return np.random.choice(possible_tiles)
+
+    def _tile_at(self, pos: tuple[int]):
+        return self.tiles[pos[0]][pos[1]]

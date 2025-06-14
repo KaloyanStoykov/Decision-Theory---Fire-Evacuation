@@ -15,10 +15,14 @@ class FireFighterWorld(gym.Env):
         self.static_mode = static_mode
 
         self.observation_space = spaces.Tuple(
-            (spaces.Box(0, config.grid_size - 1, shape=(2,), dtype=int),)  # agent
+            (
+                spaces.Box(0, config.grid_size - 1, shape=(2,), dtype=int),  # agent
+                spaces.Box(0, config.grid_size - 1, shape=(2,), dtype=int),  # target
+                spaces.Discrete(2),  # is_fire_present
+            )
         )
 
-        self.action_space = spaces.Discrete(len(Action) - 1)
+        self.action_space = spaces.Discrete(len(Action))
 
         assert render_mode is None or render_mode in self.metadata["render_modes"]
         self.render_mode = render_mode
@@ -26,13 +30,19 @@ class FireFighterWorld(gym.Env):
         self.window = Window() if self.render_mode == "human" else None
 
     def _get_obs(self):
-        return (self.grid.agent.location,)
+        return (
+            self.grid.agent.location,
+            self.grid.target.location,
+            self.grid.tiles[3][2].is_on_fire,
+        )
 
-    def _get_info(self):
+    def _get_info(self, is_legal_move=True):
         return {
-            "agent_pos": self.grid.agent.location.tolist(),
-            "target_pos": self.grid.target.location.tolist(),
+            "is_legal_move": is_legal_move,
             "is_agent_dead": self.grid.is_agent_dead(),
+            "distance": np.linalg.norm(
+                self.grid.agent.location - self.grid.target.location
+            ),
         }
 
     def reset(self, seed=None, options=None):
@@ -61,11 +71,9 @@ class FireFighterWorld(gym.Env):
         return self._get_obs(), self._get_info()
 
     def step(self, action):
-        # The grid's update method now handles the static_mode flag
         is_legal_move = self.grid.update(list(Action)[action])
 
-        reward = config.time_step_punishment  # Default punishment for each step
-        reward += config.distance_reward * (
+        reward = config.time_step_punishment + config.distance_reward * (
             config.max_distance
             - np.linalg.norm(self.grid.agent.location - self.grid.target.location)
         )
@@ -73,29 +81,15 @@ class FireFighterWorld(gym.Env):
         terminated = False
 
         if not is_legal_move:
-            reward += (
-                config.illeagal_move_punishment
-            )  # Punish illegal moves immediately
-            return self._get_obs(), reward, terminated, False, self._get_info()
-
-        # Check for termination conditions *after* agent movement/action
-        if self.grid.is_agent_dead():
+            reward += config.illeagal_move_punishment
+        elif self.grid.is_agent_dead():
             terminated = True
-            reward += config.death_punishment  # Large negative reward for death
+            reward += config.death_punishment
         elif np.array_equal(self.grid.agent.location, self.grid.target.location):
             terminated = True
-            reward += (
-                config.evacuation_success_reward
-            )  # Large positive reward for reaching target
-
-        # print(
-        #     f"Reward: {reward} for action {list(Action)[action]} at {self.grid.agent.location}"
-        # )
-
-        # For the MDP, 'chance_of_catching_fire' and 'chance_of_self_extinguish' are 0 (static)
-        # These are handled within grid.update and should be skipped if static_mode is True.
-        # The Q-learning training setup sets chance_of_catching_fire to 0, which also
-        # effectively makes fire static for Q-learning if that's desired for comparison.
+            reward += config.evacuation_success_reward
+        elif action == Action.PUT_OUT_FIRE.value:
+            reward += config.fire_extinguished_reward
 
         if self.render_mode == "human":
             self._render_frame()
@@ -105,7 +99,7 @@ class FireFighterWorld(gym.Env):
             max(min(reward, config.max_reward), config.min_reward),  # clip reward
             terminated,
             False,
-            self._get_info(),
+            self._get_info(is_legal_move),
         )
 
     def render(self):

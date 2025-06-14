@@ -1,6 +1,7 @@
 import numpy as np
 from envs.tiles.tile import Tile
 from envs.tiles.base import Base
+from envs.constants import config
 
 
 def decide_action(chance):
@@ -36,3 +37,12 @@ def random_tile(
 
 def is_occupied(tile: Tile, entity: Base):
     return tile.x == entity.x and tile.y == entity.y
+
+
+def out_of_grid(pos: tuple[int]):
+    return (
+        pos[0] < 0
+        or pos[0] >= config.grid_size
+        or pos[1] < 0
+        or pos[1] >= config.grid_size
+    )

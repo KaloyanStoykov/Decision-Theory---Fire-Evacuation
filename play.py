@@ -5,24 +5,25 @@ from envs.ui.window import Window
 from envs.grid import Grid
 from envs.ui.sprites import load_srpite_map
 from envs.ui.play_room import PlayRoom
+import sys
+import asyncio
 
 config.grid_size = 8
 config.window_size = 512
 config.square_size = int(config.window_size / config.grid_size)
 config.fps = 60
 config.animation_delay = 60 / 8
-config.chance_of_catching_fire = 0.012
+config.static_fire_mode = False
+config.chance_of_catching_fire = 0.03
 config.chance_of_self_extinguish = config.chance_of_catching_fire / 15
 
 load_srpite_map()
 window = Window()
 grid = Grid(PlayRoom())
 
-running = True
 
-
-def play():
-    global running
+async def play():
+    running = True
 
     while running:
         action = None
@@ -64,8 +65,11 @@ def play():
         else:
             window.draw(lambda canvas: grid.draw(canvas), lambda: grid.animate())
 
+        if sys.platform == "emscripten":
+            await asyncio.sleep(0)
+
     window.close()
 
 
 if __name__ == "__main__":
-    play()
+    asyncio.run(play())

@@ -8,7 +8,7 @@ class Config:
     def __init__(self):
         self.grid_size = 6
         self.window_size = 512
-        self.fps = 100
+        self.fps = 1000
         self.animation_delay = 1
         self.square_size = int(self.window_size / self.grid_size)
         self.durability_power = 1
@@ -27,11 +27,12 @@ class Config:
         self.death_punishment = -100
         self.illeagal_move_punishment = -100
         self.success_reward = 10
-        self.distance_reward = 0.1
+        self.distance_reward = 2
         self.max_distance = np.linalg.norm(np.array([0, 0]) - np.array([6, 6]))
+        self.fire_extinguished_reward = 10
 
         self.evacuation_success_reward = 1000  # Reward for reaching the cat/target
-        self.discount_factor = 0.95  # Discount factor for MDP Value Iteration
+        self.discount_factor = 0.9  # Discount factor for MDP Value Iteration
 
         # Static Fire switch
         self.static_fire_mode = True
@@ -104,4 +105,4 @@ class Action(Enum):
     PUT_OUT_FIRE = 4  # This action should be included if your MDP considers it
 
 
-type Observation = tuple[np.ndarray]
+type Observation = tuple[np.ndarray, np.ndarray]

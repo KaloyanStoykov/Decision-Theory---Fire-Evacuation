@@ -21,7 +21,7 @@ def scale(sprite, size=-1):
 
 # Function to load a sprite sheet and chop it into individual sprites
 def load_sprite_sheet(filename, rows, cols, size):
-    pygame.display.set_mode((cols * size, rows * size))
+    pygame.display.set_mode((cols * size, rows * size), pygame.HIDDEN)
     try:
         sheet = pygame.image.load(filename).convert_alpha()
         sheet_rect = sheet.get_rect()
@@ -118,9 +118,8 @@ def load_fire_sprites():
 def display_sheet(sprites, rows, cols):
     pygame.init()
     pygame.display.set_mode(
-        (1, 1), pygame.HIDDEN
+        (cols * config.square_size, rows * config.square_size), pygame.HIDDEN
     )  # Create a hidden display to avoid flicker
-    pygame.display.set_mode((cols * config.square_size, rows * config.square_size))
     clock = pygame.time.Clock()
 
 

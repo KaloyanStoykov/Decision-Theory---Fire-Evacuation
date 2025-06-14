@@ -1,3 +1,7 @@
 from play import play
 
-play()
+
+import asyncio
+
+
+asyncio.run(play())

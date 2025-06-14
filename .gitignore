@@ -8,7 +8,8 @@ __pycache__/
 *$py.class
 q_table.npy
 mdp/**
-
+metrics.png
+data.json
 # C extensions
 *.so
 

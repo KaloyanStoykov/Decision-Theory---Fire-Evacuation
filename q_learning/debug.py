@@ -2,16 +2,23 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 import numpy as np
+import pygame
 from envs.constants import config
+import time
+from q_learning.constants import DEBUG_UPDATE
 
 UP = "↑"
 DOWN = "↓"
 LEFT = "←"
 RIGHT = "→"
+PUT_OUT_FIRE = "🔥"
 
 
 class Visualizer:
+    _pause = False
+
     def __init__(self, grid_shape, num_actions):
+        self._debug_update = DEBUG_UPDATE
 
         self.grid_shape = grid_shape
         self.num_actions = num_actions
@@ -30,25 +37,39 @@ class Visualizer:
         q_values = np.zeros(self.grid_shape)
         self.heatmap = self.ax3.imshow(q_values, cmap="viridis")
         self.fig.colorbar(self.heatmap, ax=self.ax3)
+        self.counter = 0
 
-        # # Plot best action policy
-        # self.ax4 = self.axes[1][1]
-        # self.ax4.clear()
-        # actions = np.zeros(self.grid_shape)
-        # policy_map = self.ax4.imshow(actions, cmap="Accent")
-        # self.ax4.set_title("Best Action Policy")
+    def update(self, q_table, epsilon, td_error, target, is_fire_on):
+        self.counter += 1
+        if self.counter == self._debug_update:
+            self.counter = 0
+        else:
+            return
 
-    def update(self, q_table, epsilon, td_error):
-        self.q.update(q_table)
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_p:
+                    self._pause = not self._pause
+                elif event.key == pygame.K_LEFT:
+                    self._debug_update -= 1
+                elif event.key == pygame.K_RIGHT:
+                    self._debug_update += 1
+
+        if self._pause:
+            pygame.display.flip()
+            time.sleep(1)
+            return self.update(q_table, epsilon, td_error, target, is_fire_on)
+
+        self.q.update(q_table, target, is_fire_on)
         self.td_error.update(td_error)
         self.epsilon.update(epsilon)
 
-        q_values = np.zeros(self.grid_shape)
-        for x in range(config.grid_size):
-            for y in range(config.grid_size):
-                idx = y * config.grid_size + x
-                q_values[x, y] = np.max(q_table[idx])
-        self.heatmap.set_data(q_values)
+        # q_values = np.zeros(self.grid_shape)
+        # for x in range(config.grid_size):
+        #     for y in range(config.grid_size):
+        #         # q_values[x, y] = np.max(q_table[idx])
+        #         idx = get_values(q_table, ((x, y), target, is_fire_on))
+        # self.heatmap.set_data(q_values)
 
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
@@ -76,6 +97,7 @@ class Axis:
 
 
 class QValuePlot:
+
     def __init__(self, axis):
         self.texts = {}
         self.ax = axis
@@ -109,16 +131,38 @@ class QValuePlot:
                     LEFT: self.ax.text(
                         cx - 0.3, cy, "", ha="center", va="center", fontsize=8
                     ),
+                    PUT_OUT_FIRE: self.ax.text(
+                        cx, cy, "", ha="center", va="center", fontsize=8
+                    ),
+                    "best": self.ax.text(
+                        cx - 0.3, cy - 0.3, "", ha="center", va="center", fontsize=8
+                    ),
                 }
 
-    def update(self, q_table):
+    def update(self, q_table, target, is_fire_on):
         for x in range(config.grid_size):
             for y in range(config.grid_size):
-                idx = y * config.grid_size + x
-                values = q_table[idx]
+                values = get_values(q_table, (((x, y), target, is_fire_on)))
 
-                for direction, value in zip([RIGHT, UP, LEFT, DOWN], values):
+                max = {"val": 0, "action": ""}
+                for direction, value in zip(
+                    [RIGHT, UP, LEFT, DOWN, PUT_OUT_FIRE], values
+                ):
+                    if value > max["val"]:
+                        max["val"] = value
+                        max["action"] = direction
                     color = self.cmap(self.norm(value))
                     text_obj = self.texts[(x, y)][direction]
                     text_obj.set_text(f"{value:.1f}")
                     text_obj.set_color(color)
+
+                color = self.cmap(self.norm(max["val"]))
+                text_obj = self.texts[(x, y)]["best"]
+                text_obj.set_text(f"{max['action']}")
+                text_obj.set_color(color)
+
+
+def get_values(q_table, observation):
+    return q_table[observation[1][0]][observation[1][1]][1 if observation[2] else 0][
+        observation[0][0]
+    ][observation[0][1]]
