@@ -40,6 +40,9 @@ class Wall(Tile):
         raise Exception("Wall is not inflammable")
 
     def _set_image(self, img):
+        if not config.is_rendering:
+            return
+
         if self.x % 2 == 0:
             img = pygame.transform.flip(img, True, False)
 

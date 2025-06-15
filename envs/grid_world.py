@@ -85,7 +85,7 @@ class FireFighterWorld(gym.Env):
         elif self.grid.is_agent_dead():
             terminated = True
             reward += config.death_punishment
-        elif np.array_equal(self.grid.agent.location, self.grid.target.location):
+        elif self.grid.is_cat_rescued():
             terminated = True
             reward += config.evacuation_success_reward
         elif action == Action.PUT_OUT_FIRE.value:

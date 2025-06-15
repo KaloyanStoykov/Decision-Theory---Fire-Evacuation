@@ -73,6 +73,9 @@ class Grid:
     def is_agent_dead(self):
         return self.tiles[self.agent.x][self.agent.y].is_on_fire
 
+    def is_cat_rescued(self):
+        return np.array_equal(self.agent.location, self.target.location)
+
     def update(self, action: Action = None):
         if action is None:
             self._update_tiles()

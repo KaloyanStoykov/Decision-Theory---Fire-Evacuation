@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from q_learning.constants import LEARN
+from q_learning.constants import LEARN, N_EPISODES
 import json
 from envs.constants import config
 
@@ -13,7 +13,7 @@ class Metrics:
         self.steps = 0
         self.episodes = []
         self.last_episode_cluster = []
-        self.episodes_cluster_size = 10
+        self.episodes_cluster_size = N_EPISODES / 1000
 
     def log(self, reward, is_legal_move, agent_is_dead):
         if not is_legal_move:
@@ -161,11 +161,10 @@ class Metrics:
 
         plt.tight_layout(rect=[0, 0.03, 1, 0.95])
         plt.legend()
-        plt.savefig("metrics.png")
+        plt.savefig(
+            f"metrics/metrics.dr={config.distance_reward}.tsp={config.time_step_punishment}.N={N_EPISODES}.png"
+        )
         plt.close()
-
-        with open("data.json", "w") as f:
-            json.dump(self.episodes, f, indent=2)
 
 
 def calculate_stuck_positions(q_table, observation):

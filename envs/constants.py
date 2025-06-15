@@ -1,5 +1,4 @@
-# envs/constants.py
-
+from q_learning.constants import RENDER
 from enum import Enum
 import numpy as np
 
@@ -12,6 +11,7 @@ class Config:
         self.animation_delay = 1
         self.square_size = int(self.window_size / self.grid_size)
         self.durability_power = 1
+        self.is_rendering = RENDER
 
         self.fire_size_on_object = 0.6
         self.chance_of_catching_fire = 0.04
@@ -23,11 +23,11 @@ class Config:
 
         self.min_reward = -100
         self.max_reward = 100
-        self.time_step_punishment = -0.1
+        self.time_step_punishment = -3
         self.death_punishment = -100
-        self.illeagal_move_punishment = -100
+        self.illeagal_move_punishment = -10
         self.success_reward = 10
-        self.distance_reward = 2
+        self.distance_reward = 0.2  # lower this and increase time_step_punishment for more accurate results
         self.max_distance = np.linalg.norm(np.array([0, 0]) - np.array([6, 6]))
         self.fire_extinguished_reward = 10
 

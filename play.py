@@ -1,3 +1,6 @@
+import asyncio
+
+
 import pygame
 import numpy as np
 from envs.constants import Action, config
@@ -26,6 +29,9 @@ async def play():
     running = True
 
     while running:
+        if sys.platform == "emscripten":
+            await asyncio.sleep(0)
+
         action = None
 
         for event in pygame.event.get():
@@ -48,28 +54,25 @@ async def play():
 
         grid.update(action)
 
-        if np.array_equal(grid.agent.location, grid.target.location):
+        if grid.is_cat_rescued():
             window.draw(lambda canvas: grid.draw(canvas), lambda: grid.animate())
-            running = window.win_screen()
+            running = await window.win_screen()
             if running:
                 grid.create_grid()
 
         if grid.is_agent_dead():
             while grid.is_animation_on_going:
+                await asyncio.sleep(0)
                 window.draw(lambda canvas: grid.draw(canvas), lambda: grid.animate())
 
-            running = window.game_over_screen()
+            running = await window.game_over_screen()
 
             if running:
                 grid.create_grid()
         else:
             window.draw(lambda canvas: grid.draw(canvas), lambda: grid.animate())
 
-        if sys.platform == "emscripten":
-            await asyncio.sleep(0)
-
     window.close()
 
 
-if __name__ == "__main__":
-    asyncio.run(play())
+asyncio.run(play())

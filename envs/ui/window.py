@@ -1,4 +1,6 @@
 import pygame
+from envs.ui.sprites import sprite_map
+import asyncio
 from envs.constants import config
 import numpy as np
 import math
@@ -7,6 +9,18 @@ GREEN = GREEN = (100, 255, 100)
 RED = (255, 60, 60)
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
+
+controlls = {
+    "w": [1, 4],
+    "a": [0, 5],
+    "s": [0, 4],
+    "d": [0, 3],
+    "u": [1, 1],
+    "l": [0, 2],
+    "down": [0, 1],
+    "r": [0, 0],
+    "space": [1, 3],
+}
 
 
 class Window:
@@ -20,10 +34,14 @@ class Window:
             self._extra_small_font = pygame.font.Font(
                 "assets/PressStart2P-Regular.ttf", 12
             )
+            self._extra_extra_small_font = pygame.font.Font(
+                "assets/PressStart2P-Regular.ttf", 8
+            )
         except:
             self._font = pygame.font.SysFont("Courier", 32)
             self._small_font = pygame.font.SysFont("Courier", 20)
             self._extra_small_font = pygame.font.SysFont("Courier", 12)
+            self._extra_extra_small_font = pygame.font.SysFont("Courier", 8)
 
         self._canvas = pygame.Surface((config.window_size, config.window_size))
         self._canvas.fill((255, 255, 255))
@@ -41,19 +59,55 @@ class Window:
         draw_func(self._canvas)
 
         self._screen.blit(self._canvas, self._canvas.get_rect())
+        self.draw_controlls()
 
         pygame.event.pump()
         pygame.display.update()
         self._clock.tick(config.fps)
+
+    def draw_controlls(self):
+        s = 22
+        for controll in controlls.keys():
+            if controll == "space":
+                continue
+
+            self._screen.blit(
+                sprite_map["controlls"][controll],
+                (
+                    config.window_size - (controlls[controll][1] + 1) * s,
+                    config.window_size - (controlls[controll][0] + 1) * s,
+                ),
+            )
+        self._screen.blit(
+            sprite_map["controlls"]["space"],
+            (
+                config.window_size - (controlls["space"][1] + 1) * s + 2,
+                config.window_size - (controlls["space"][0] + 1) * s,
+            ),
+        )
+        text = self._extra_extra_small_font.render("Space", True, BLACK)
+        self._screen.blit(
+            text,
+            text.get_rect(
+                center=(
+                    config.window_size - controlls["space"][1] * s,
+                    config.window_size - controlls["space"][1] * s + 30,
+                )
+            ),
+        )
+
+        pygame.display.flip()
 
     def close(self):
         if self._screen is not None:
             pygame.display.quit()
             pygame.quit()
 
-    def game_over_screen(self):
+    async def game_over_screen(self):
         self._draw_game_over()
         while True:
+            await asyncio.sleep(0)
+
             for event in pygame.event.get():
                 match event.type:
                     case pygame.QUIT:
@@ -159,11 +213,13 @@ class Window:
         self._screen.blit(n_text, n_pos)
         pygame.draw.rect(self._screen, BLACK if hover_no else RED, underline_n)
 
-    def win_screen(self):
+    async def win_screen(self):
         confetti_list = [ConfettiParticle() for _ in range(150)]
         self._draw_congrats(confetti_list)
 
         while True:
+            await asyncio.sleep(0)
+
             for c in confetti_list:
                 c.update()
 

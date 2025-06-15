@@ -13,6 +13,9 @@ sprite_map = {}
 
 # Function to scale a single sprite to the config.square_size
 def scale(sprite, size=-1):
+    if sprite is None:
+        return None
+
     if size == -1:  # this is required for dynamically setting the config
         size = config.square_size
 
@@ -21,7 +24,9 @@ def scale(sprite, size=-1):
 
 # Function to load a sprite sheet and chop it into individual sprites
 def load_sprite_sheet(filename, rows, cols, size):
-    pygame.display.set_mode((cols * size, rows * size), pygame.HIDDEN)
+    if not config.is_rendering:
+        return [[None] * cols] * rows
+
     try:
         sheet = pygame.image.load(filename).convert_alpha()
         sheet_rect = sheet.get_rect()
@@ -80,6 +85,9 @@ def load_sprite_sheet(filename, rows, cols, size):
 
 # Function to load fire sprites specifically
 def load_fire_sprites():
+    if not config.is_rendering:
+        return [None] * 4
+
     fires = []
     try:
         for i in range(1, 5):  # Assumes Fogo_1.png to Fogo_4.png
@@ -114,19 +122,12 @@ def load_fire_sprites():
 # Pygame initialization for the whole sprites.py file
 # A temporary display surface is still needed for image loading
 
-
-def display_sheet(sprites, rows, cols):
-    pygame.init()
-    pygame.display.set_mode(
-        (cols * config.square_size, rows * config.square_size), pygame.HIDDEN
-    )  # Create a hidden display to avoid flicker
-    clock = pygame.time.Clock()
-
-
-# --- Character and item specific sprite processing functions ---
+shadow_sheet = None
 
 
 def fix_firefighter(sprite_100x100_sheet, with_shadow=True):
+    if sprite_100x100_sheet is None:
+        return None
     # This function expects a 100x100 sprite from the sheet and extracts a 24x24 sub-sprite
     # and recolors it.
     size = 24  # The actual size of the firefighter sprite within the 100x100 block
@@ -178,7 +179,6 @@ def fix_firefighter(sprite_100x100_sheet, with_shadow=True):
     if with_shadow:
         # Load and process shadow
         # Ensure Soldier-Shadow.png is a 100x100 sprite as well if it's from a sheet
-        shadow_sheet = load_sprite_sheet("assets/Soldier-Shadow.png", 1, 1, 100)
         if shadow_sheet and shadow_sheet[0]:
             raw_shadow = shadow_sheet[0][0]
             # Extract the same 24x24 sub-sprite and scale it
@@ -205,8 +205,10 @@ def fix_cat(sprite):
 
 
 def load_srpite_map():
-    global sprite_map
+    global sprite_map, shadow_sheet
     pygame.init()
+    pygame.display.set_mode((1000, 1000), pygame.HIDDEN)
+    shadow_sheet = load_sprite_sheet("assets/Soldier-Shadow.png", 1, 1, 100)
 
     env_sprites = [
         [scale(sprite) for sprite in sprite_list]
@@ -290,6 +292,19 @@ def load_srpite_map():
             "down": env_sprites[26][3],
         },
         "oven": env_sprites[26][4],
+        "controlls": {
+            "a": scale(pygame.image.load("assets/a.svg").convert_alpha(), 20),
+            "w": scale(pygame.image.load("assets/w.svg").convert_alpha(), 20),
+            "d": scale(pygame.image.load("assets/d.svg").convert_alpha(), 20),
+            "s": scale(pygame.image.load("assets/s.svg").convert_alpha(), 20),
+            "u": scale(pygame.image.load("assets/u.svg").convert_alpha(), 20),
+            "l": scale(pygame.image.load("assets/l.svg").convert_alpha(), 20),
+            "down": scale(pygame.image.load("assets/down.svg").convert_alpha(), 20),
+            "r": scale(pygame.image.load("assets/r.svg").convert_alpha(), 20),
+            "space": pygame.transform.scale(
+                pygame.image.load("assets/space.svg").convert_alpha(), (40, 30)
+            ),
+        },
     }
 
     sprite_map.update(map)
@@ -318,6 +333,9 @@ def load_srpite_map():
         map["top_bottom_right_left"] = env_sprites[color_i + 5][7]
 
         sprite_map[color + "_carpet"] = map
+
+    if not config.is_rendering:
+        return
 
     # fix top wall black strips
     w = scale(sprite_map["wall"]["top"]).get_width()
