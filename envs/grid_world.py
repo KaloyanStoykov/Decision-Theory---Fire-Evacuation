@@ -65,6 +65,10 @@ class FireFighterWorld(gym.Env):
             self.np_random,
         )
 
+        if "preset_fire_positions" in options:
+            for pos in options["preset_fire_positions"]:
+                self.grid.tiles[pos[0]][pos[1]].is_on_fire = True
+
         if self.render_mode == "human":
             self._render_frame()
 

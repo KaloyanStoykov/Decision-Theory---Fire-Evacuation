@@ -59,15 +59,24 @@ class Grid:
             )
         )
 
-        target_location = (
-            self.np.choice(free_tiles)
-            if config.random_target_location
-            else free_tiles[0]
-        )
-
-        free_tiles.remove(target_location)
+        target_location = None
+        if self.initial_target_pos is None:
+            target_location = (
+                self.np.choice(free_tiles)
+                if config.random_target_location
+                else free_tiles[0]
+            )
+        else:
+            target_location = self.tiles[self.initial_target_pos[0]][self.initial_target_pos[1]]
         self.target = Cat(np.array([target_location.x, target_location.y]))
-        agent_location: Tile = self.np.choice(free_tiles)
+
+
+        if self.initial_agent_pos is None:
+            free_tiles.remove(target_location)
+            agent_location: Tile = self.np.choice(free_tiles)
+        else:
+            agent_location = self.tiles[self.initial_agent_pos[0]][self.initial_agent_pos[1]]
+
         self.agent = FireFighter(np.array([agent_location.x, agent_location.y]))
 
     def is_agent_dead(self):
