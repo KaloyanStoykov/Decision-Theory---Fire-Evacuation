@@ -13,7 +13,7 @@ def create_env():
     )
 
     env = gym.make("FireFighterWorld", render_mode="human" if RENDER else "rgb_array")
-    env.reset(seed=42, options = {"preset_fire_positions":[(3,2)]})
+    env.reset(seed=42, options={"preset_fire_positions": [(3, 2)]})
 
     return env
 
@@ -24,10 +24,16 @@ load_srpite_map()
 agent = Agent()
 metrics = Metrics()
 
+preset_fire_positions = [
+    (5, 0),
+    (5, 1),
+    (5, 3),
+]
+
 
 def run():
     env = create_env()
-    observation, _ = env.reset(options={"preset_fire_positions":[(3,2)]})
+    observation, _ = env.reset(options={"preset_fire_positions": preset_fire_positions})
 
     for _ in range(N_EPISODES):
         for _ in range(MAX_STEPS_PER_EPISODE):
@@ -43,7 +49,9 @@ def run():
 
         metrics.new_episode(agent.epsilon, info["distance"], agent.q_table, observation)
         agent.decay_epsilon()
-        observation, _ = env.reset(options={"preset_fire_positions":[(3,2)]})
+        observation, _ = env.reset(
+            options={"preset_fire_positions": preset_fire_positions}
+        )
 
     env.close()
     metrics.save()

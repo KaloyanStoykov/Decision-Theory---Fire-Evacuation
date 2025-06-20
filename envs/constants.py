@@ -7,7 +7,7 @@ class Config:
     def __init__(self):
         self.grid_size = 6
         self.window_size = 512
-        self.fps = 10
+        self.fps = 100
         self.animation_delay = 1
         self.square_size = int(self.window_size / self.grid_size)
         self.durability_power = 1

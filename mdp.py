@@ -19,7 +19,6 @@ from envs.constants import config
 from envs.grid_world import FireFighterWorld
 
 
-
 class FireEvacuationAgentMDP:
     def __init__(self, seed=None):
         """
@@ -27,7 +26,6 @@ class FireEvacuationAgentMDP:
         This class pre-computes the optimal policy for a STATIC fire environment.
         """
         self.np_random = np.random.RandomState(seed)
-
 
         self.grid_template = Grid(
             TrainingRoom(),
@@ -107,11 +105,10 @@ class FireEvacuationAgentMDP:
         env_simulator = gym.make("FireFighterWorld", render_mode=None, static_mode=True)
         slip_prob = 0.2
 
-        
         for s_idx, (ax, ay, tx, ty) in enumerate(self.states):
             # Reset the simulator environment to the current state (ax, ay, tx, ty)
             # using the options parameter for initial positions.
-            preset_fire_positions = [(5, 0), (5,1), (5,3)]
+            preset_fire_positions = [(5, 0), (5, 1), (5, 3)]
 
             observation, info = env_simulator.reset(
                 options={
@@ -122,13 +119,13 @@ class FireEvacuationAgentMDP:
                 }
             )
 
-
-            current_agent_pos = np.array(observation[0])  # if you only care about the agent
+            current_agent_pos = np.array(
+                observation[0]
+            )  # if you only care about the agent
             current_target_pos = np.array(observation[1])
 
-
             for a_idx, action in enumerate(self.actions):
-                preset_fire_positions = [(5, 0), (5,1), (5,3)]
+                preset_fire_positions = [(5, 0), (5, 1), (5, 3)]
                 observation, info = env_simulator.reset(
                     options={
                         "initial_agent_pos": np.array([ax, ay]),
@@ -137,7 +134,6 @@ class FireEvacuationAgentMDP:
                         "preset_fire_positions": preset_fire_positions,
                     }
                 )
-
 
                 next_observation, reward, terminated, truncated, next_info = (
                     env_simulator.step(action.value)
@@ -179,7 +175,7 @@ class FireEvacuationAgentMDP:
             current_target_pos = np.array([tx, ty])
 
             for a_idx, action in enumerate(self.actions):
-                preset_fire_positions = [(5, 0), (5,1), (5,3)]
+                preset_fire_positions = [(5, 0), (5, 1), (5, 3)]
 
                 observation, info = env_simulator.reset(
                     options={
@@ -189,7 +185,6 @@ class FireEvacuationAgentMDP:
                         "preset_fire_positions": preset_fire_positions,
                     }
                 )
-
 
                 _, reward, _, _, _ = env_simulator.step(action.value)
                 R[s_idx, a_idx] = reward
@@ -224,7 +219,7 @@ class FireEvacuationAgentMDP:
                     V_new[s_idx] = np.max(q_values)
                     self.policy[s_idx] = np.argmax(q_values)
                 else:
-                    V_new[s_idx] = 0  
+                    V_new[s_idx] = 0
                     self.policy[s_idx] = 0
 
                 delta = max(delta, abs(V_new[s_idx] - V[s_idx]))
@@ -259,7 +254,7 @@ class FireEvacuationAgentMDP:
             )
             return Action.UP
 
-        if np.random.uniform(0, 1) < .8:
+        if np.random.uniform(0, 1) < 0.8:
             s_idx = self.state_to_idx[current_state_tuple]
             optimal_action_idx = self.policy[s_idx]
             return self.actions[optimal_action_idx]
@@ -275,8 +270,8 @@ class FireEvacuationAgentMDP:
     def __str__(self) -> str:
         return "FireEvacuationAgentMDP (Solver Ready)"
 
-sys.path.insert(0, os.path.abspath(".."))
 
+sys.path.insert(0, os.path.abspath(".."))
 
 
 gym.envs.registration.register(
@@ -304,17 +299,18 @@ def run_mdp_simulation():
     print("Creating environment for visualization...")
     env = gym.make("FireFighterWorld-v0", render_mode="human", static_mode=True)
 
-   
     initial_agent_pos = np.array([0, 5])
-    initial_target_pos = np.array(
-        [0, 0]
-    ) 
+    initial_target_pos = np.array([0, 0])
 
     print(
         f"Resetting environment to initial state: Agent at {initial_agent_pos}, Target at {initial_target_pos}"
     )
-    
-    preset_fire_positions = [(5, 0), (5,1), (5,3)]  # Example: fire at (3,2) as you want
+
+    preset_fire_positions = [
+        (5, 0),
+        (5, 1),
+        (5, 3),
+    ]  # Example: fire at (3,2) as you want
 
     observation, info = env.reset(
         options={
@@ -349,9 +345,6 @@ def run_mdp_simulation():
             f"Step {step_count}: Agent at {agent_current_pos}, Target at {target_current_pos}. Optimal Action: {optimal_action.name}"
         )
 
-
-
-        
         next_observation, reward, terminated, truncated, next_info = env.step(
             optimal_action.value
         )
@@ -364,7 +357,6 @@ def run_mdp_simulation():
 
         # Render the frame to show the action
         env.render()
-        time.sleep(0.5)
 
     print(f"Simulation finished in {step_count} steps. Total Reward: {total_reward}")
     env.close()

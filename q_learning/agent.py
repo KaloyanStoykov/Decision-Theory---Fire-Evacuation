@@ -30,7 +30,7 @@ def get_values(q_table, observation):
 class Agent:
     epsilon = INITIAL_EPSILON
 
-    def __init__(self):
+    def __init__(self, seed=None):
         if not SAVE_Q_TABLE and os.path.exists(FILE_NAME):
             print("Loading Q-table from file...")
             self.q_table = np.load(FILE_NAME)
@@ -53,7 +53,7 @@ class Agent:
         otherwise a random action with probability epsilon to ensure exploration.
         """
         if np.random.uniform(0, 1) < self.epsilon:
-            return decide_random_action(get_values(self.q_table, observation))
+            return actions.sample()
         else:
             return np.argmax(get_values(self.q_table, observation))
 

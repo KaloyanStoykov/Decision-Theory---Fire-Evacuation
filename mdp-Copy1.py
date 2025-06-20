@@ -12,7 +12,6 @@ from envs.grid import Grid
 from envs.ui.training_room import TrainingRoom
 
 
-
 LEARN = True
 N_EPISODES = 1000
 
@@ -61,7 +60,9 @@ class FireEvacuationAgentMDP:
         self.R = self._build_reward_function()
         self.value_function = np.zeros(self.num_states)
         self.policy = np.zeros(self.num_states, dtype=int)
-        print(f"MDP Initialized with {self.num_states} states and {len(self.actions)} actions.")
+        print(
+            f"MDP Initialized with {self.num_states} states and {len(self.actions)} actions."
+        )
         print("Starting Value Iteration...")
         self.value_iteration(epsilon=1e-6)
         print("Value Iteration complete. Optimal policy computed.")
@@ -102,7 +103,9 @@ class FireEvacuationAgentMDP:
                         "preset_fire_positions": preset_fire_positions,
                     }
                 )
-                next_observation, reward, terminated, truncated, next_info = env_simulator.step(action.value)
+                next_observation, reward, terminated, truncated, next_info = (
+                    env_simulator.step(action.value)
+                )
                 next_agent_pos = next_observation[0]
                 next_target_pos = next_observation[1]
 
@@ -203,12 +206,14 @@ class FireEvacuationAgentMDP:
         # For evaluation of the MDP, we typically want to always follow the optimal policy.
         # If you want to introduce some stochasticity for robustness testing, keep the if.
         # Otherwise, remove the if/else and just return the optimal action.
-        if np.random.uniform(0, 1) < 1.0: # Always follow optimal policy for evaluation
+        if np.random.uniform(0, 1) < 1.0:  # Always follow optimal policy for evaluation
             s_idx = self.state_to_idx[current_state_tuple]
             optimal_action_idx = self.policy[s_idx]
             return self.actions[optimal_action_idx]
         else:
-            return np.random.choice(self.actions) # This part is typically not used for MDP evaluation
+            return np.random.choice(
+                self.actions
+            )  # This part is typically not used for MDP evaluation
 
     def get_value_function(self):
         return self.value_function
@@ -239,6 +244,7 @@ N_EPISODES = 1000
 
 load_srpite_map()
 
+
 class Metrics:
     def __init__(self):
         self.episodes_data = []
@@ -247,12 +253,14 @@ class Metrics:
 
     def log_episode(self, total_reward, steps, illegal_moves, deaths, initial_distance):
         ratio = initial_distance / steps if steps > 0 else 0
-        self.current_cluster.append({
-            "reward": total_reward,
-            "illegal_moves": illegal_moves,
-            "deaths": deaths,
-            "steps_to_distance": ratio
-        })
+        self.current_cluster.append(
+            {
+                "reward": total_reward,
+                "illegal_moves": illegal_moves,
+                "deaths": deaths,
+                "steps_to_distance": ratio,
+            }
+        )
         if len(self.current_cluster) >= self.cluster_size:
             self.aggregate_cluster()
 
@@ -262,7 +270,7 @@ class Metrics:
             "reward": np.mean([ep["reward"] for ep in cluster]),
             "illegal_moves": np.mean([ep["illegal_moves"] for ep in cluster]),
             "deaths": np.mean([ep["deaths"] for ep in cluster]),
-            "steps_to_distance": np.mean([ep["steps_to_distance"] for ep in cluster])
+            "steps_to_distance": np.mean([ep["steps_to_distance"] for ep in cluster]),
         }
         self.episodes_data.append(agg)
         self.current_cluster = []
@@ -277,7 +285,13 @@ class Metrics:
         fig.suptitle("MDP Simulation Metrics Per Episode Cluster", fontsize=16)
 
         def plot_metric(ax, key, title, ylabel, color):
-            ax.plot(x, [d[key] for d in self.episodes_data], label=key, color=color, alpha=0.6)
+            ax.plot(
+                x,
+                [d[key] for d in self.episodes_data],
+                label=key,
+                color=color,
+                alpha=0.6,
+            )
             ax.set_title(title)
             ax.set_xlabel("Episode Cluster")
             ax.set_ylabel(ylabel)
@@ -285,13 +299,23 @@ class Metrics:
             ax.legend()
 
         plot_metric(axs[0, 0], "reward", "Average Total Reward", "Reward", "blue")
-        plot_metric(axs[0, 1], "illegal_moves", "Average Illegal Moves", "Illegal Moves", "red")
+        plot_metric(
+            axs[0, 1], "illegal_moves", "Average Illegal Moves", "Illegal Moves", "red"
+        )
         plot_metric(axs[1, 0], "deaths", "Average Deaths", "Deaths", "black")
-        plot_metric(axs[1, 1], "steps_to_distance", "Efficiency (Steps/Distance)", "Ratio", "purple")
+        plot_metric(
+            axs[1, 1],
+            "steps_to_distance",
+            "Efficiency (Steps/Distance)",
+            "Ratio",
+            "purple",
+        )
 
         plt.tight_layout(rect=[0, 0.03, 1, 0.95])
         os.makedirs("metrics", exist_ok=True)
-        plt.savefig(f"metrics/mdp_metrics.dr={config.distance_reward}.tsp={config.time_step_punishment}.N={N_EPISODES}.png")
+        plt.savefig(
+            f"metrics/mdp_metrics.dr={config.distance_reward}.tsp={config.time_step_punishment}.N={N_EPISODES}.png"
+        )
         plt.close()
 
 
@@ -315,12 +339,14 @@ def run_mdp_simulation_with_metrics(num_episodes=N_EPISODES):
     for episode in range(num_episodes):
         initial_agent_pos = np.array([0, 5])
         initial_target_pos = np.array([0, 0])
-        obs, _ = env.reset(options={
-            "initial_agent_pos": initial_agent_pos,
-            "initial_target_pos": initial_target_pos,
-            "preset_fire_mode": True,
-            "preset_fire_positions": preset_fire_positions,
-        })
+        obs, _ = env.reset(
+            options={
+                "initial_agent_pos": initial_agent_pos,
+                "initial_target_pos": initial_target_pos,
+                "preset_fire_mode": True,
+                "preset_fire_positions": preset_fire_positions,
+            }
+        )
 
         agent_pos = obs[0]
         target_pos = obs[1]
@@ -337,7 +363,9 @@ def run_mdp_simulation_with_metrics(num_episodes=N_EPISODES):
             next_obs, reward, terminated, truncated, _ = env.step(action.value)
 
             legal = True
-            if reward < config.time_step_punishment and np.array_equal(next_obs[0], agent_pos):
+            if reward < config.time_step_punishment and np.array_equal(
+                next_obs[0], agent_pos
+            ):
                 legal = False
                 illegal_moves += 1
 
@@ -347,13 +375,13 @@ def run_mdp_simulation_with_metrics(num_episodes=N_EPISODES):
             steps += 1
             done = terminated or truncated
             env.render()
-            time.sleep(0.05)
 
-        metrics.log_episode(total_reward, steps, illegal_moves, deaths, initial_distance)
+        metrics.log_episode(
+            total_reward, steps, illegal_moves, deaths, initial_distance
+        )
 
     metrics.save_plots()
     env.close()
-
 
 
 if __name__ == "__main__":
@@ -363,4 +391,4 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("MDP simulation interrupted.")
     finally:
-        plt.close('all')
+        plt.close("all")
