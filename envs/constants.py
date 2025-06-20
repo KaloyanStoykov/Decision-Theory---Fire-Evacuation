@@ -7,7 +7,7 @@ class Config:
     def __init__(self):
         self.grid_size = 6
         self.window_size = 512
-        self.fps = 1000
+        self.fps = 10
         self.animation_delay = 1
         self.square_size = int(self.window_size / self.grid_size)
         self.durability_power = 1
@@ -23,13 +23,15 @@ class Config:
 
         self.min_reward = -100
         self.max_reward = 100
-        self.time_step_punishment = -3
+        self.time_step_punishment = -2
         self.death_punishment = -100
-        self.illeagal_move_punishment = -10
+        self.illeagal_move_punishment = -5
         self.success_reward = 10
         self.distance_reward = 0.2  # lower this and increase time_step_punishment for more accurate results
-        self.max_distance = np.linalg.norm(np.array([0, 0]) - np.array([6, 6]))
-        self.fire_extinguished_reward = 10
+        self.fire_extinguished_reward = 0
+        self.max_distance = np.linalg.norm(
+            np.array([0, 0]) - np.array([self.grid_size, self.grid_size])
+        )
 
         self.evacuation_success_reward = 1000  # Reward for reaching the cat/target
         self.discount_factor = 0.9  # Discount factor for MDP Value Iteration

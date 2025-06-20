@@ -1,3 +1,4 @@
+from envs.constants import Action
 import pygame
 from envs.ui.sprites import sprite_map
 import asyncio
@@ -10,23 +11,49 @@ RED = (255, 60, 60)
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 
-controlls = {
-    "w": [1, 4],
-    "a": [0, 5],
-    "s": [0, 4],
-    "d": [0, 3],
-    "u": [1, 1],
-    "l": [0, 2],
-    "down": [0, 1],
-    "r": [0, 0],
-    "space": [1, 3],
-}
-
 
 class Window:
     def __init__(self):
         pygame.init()
         pygame.display.init()
+
+        self.controlls = {
+            "w": {"pos": [1, 4], "action": Action.UP},
+            "a": {"pos": [0, 5], "action": Action.LEFT},
+            "s": {"pos": [0, 4], "action": Action.DOWN},
+            "d": {"pos": [0, 3], "action": Action.RIGHT},
+            "u": {"pos": [1, 1], "action": Action.UP},
+            "l": {"pos": [0, 2], "action": Action.LEFT},
+            "down": {"pos": [0, 1], "action": Action.DOWN},
+            "r": {"pos": [0, 0], "action": Action.RIGHT},
+            "space": {"pos": [1, 3], "action": Action.PUT_OUT_FIRE},
+        }
+
+        self.controllBtnSize = 22
+
+        for controll in self.controlls.keys():
+            if controll == "space":
+                self.controlls[controll]["btn"] = pygame.Rect(
+                    0, 0, self.controllBtnSize, self.controllBtnSize
+                )
+                self.controlls[controll]["btn"].center = (
+                    config.window_size
+                    - (self.controlls[controll]["pos"][1] + 1) * self.controllBtnSize
+                    + 2,
+                    config.window_size
+                    - (self.controlls[controll]["pos"][0] + 1) * self.controllBtnSize,
+                )
+
+            else:
+                self.controlls[controll]["btn"] = pygame.Rect(
+                    0, 0, self.controllBtnSize, self.controllBtnSize
+                )
+                self.controlls[controll]["btn"].center = (
+                    config.window_size
+                    - (self.controlls[controll]["pos"][1] + 1) * self.controllBtnSize,
+                    config.window_size
+                    - (self.controlls[controll]["pos"][0] + 1) * self.controllBtnSize,
+                )
 
         try:
             self._font = pygame.font.Font("assets/PressStart2P-Regular.ttf", 32)
@@ -66,35 +93,33 @@ class Window:
         self._clock.tick(config.fps)
 
     def draw_controlls(self):
-        s = 22
-        for controll in controlls.keys():
+        for controll in self.controlls.keys():
             if controll == "space":
-                continue
-
-            self._screen.blit(
-                sprite_map["controlls"][controll],
-                (
-                    config.window_size - (controlls[controll][1] + 1) * s,
-                    config.window_size - (controlls[controll][0] + 1) * s,
-                ),
-            )
-        self._screen.blit(
-            sprite_map["controlls"]["space"],
-            (
-                config.window_size - (controlls["space"][1] + 1) * s + 2,
-                config.window_size - (controlls["space"][0] + 1) * s,
-            ),
-        )
-        text = self._extra_extra_small_font.render("Space", True, BLACK)
-        self._screen.blit(
-            text,
-            text.get_rect(
-                center=(
-                    config.window_size - controlls["space"][1] * s,
-                    config.window_size - controlls["space"][1] * s + 30,
+                self._screen.blit(
+                    sprite_map["controlls"][controll],
+                    self.controlls[controll]["btn"].topleft,
                 )
-            ),
-        )
+
+                text = self._extra_extra_small_font.render("Space", True, BLACK)
+                self._screen.blit(
+                    text,
+                    text.get_rect(
+                        center=(
+                            config.window_size
+                            - self.controlls[controll]["pos"][1] * self.controllBtnSize
+                            - 10,
+                            config.window_size
+                            - self.controlls[controll]["pos"][1] * self.controllBtnSize
+                            + 20,
+                        )
+                    ),
+                )
+
+            else:
+                self._screen.blit(
+                    sprite_map["controlls"][controll],
+                    self.controlls[controll]["btn"].topleft,
+                )
 
         pygame.display.flip()
 

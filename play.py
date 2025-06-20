@@ -35,22 +35,37 @@ async def play():
         action = None
 
         for event in pygame.event.get():
-            if event.type != pygame.KEYDOWN:
-                continue
-
-            match event.key:
-                case pygame.K_UP | pygame.K_w:
-                    action = Action.UP
-                case pygame.K_DOWN | pygame.K_s:
-                    action = Action.DOWN
-                case pygame.K_LEFT | pygame.K_a:
-                    action = Action.LEFT
-                case pygame.K_RIGHT | pygame.K_d:
-                    action = Action.RIGHT
-                case pygame.K_KP_ENTER | pygame.K_RETURN | pygame.K_SPACE:
-                    action = Action.PUT_OUT_FIRE
-                case pygame.K_ESCAPE | pygame.K_q | pygame.K_SPACE:
+            match event.type:
+                case pygame.QUIT:
                     running = False
+                case pygame.MOUSEBUTTONDOWN:
+                    for controll in window.controlls.keys():
+                        if window.controlls[controll]["btn"].collidepoint(event.pos):
+                            match controll:
+                                case "w" | "u":
+                                    action = Action.UP
+                                case "s" | "down":
+                                    action = Action.DOWN
+                                case "a" | "l":
+                                    action = Action.LEFT
+                                case "d" | "r":
+                                    action = Action.RIGHT
+                                case "space":
+                                    action = Action.PUT_OUT_FIRE
+                case pygame.KEYDOWN:
+                    match event.key:
+                        case pygame.K_UP | pygame.K_w:
+                            action = Action.UP
+                        case pygame.K_DOWN | pygame.K_s:
+                            action = Action.DOWN
+                        case pygame.K_LEFT | pygame.K_a:
+                            action = Action.LEFT
+                        case pygame.K_RIGHT | pygame.K_d:
+                            action = Action.RIGHT
+                        case pygame.K_KP_ENTER | pygame.K_RETURN | pygame.K_SPACE:
+                            action = Action.PUT_OUT_FIRE
+                        case pygame.K_ESCAPE | pygame.K_q | pygame.K_SPACE:
+                            running = False
 
         grid.update(action)
 

@@ -1,3 +1,4 @@
+from envs.utilities import decide_random_action
 import os
 import numpy as np
 from envs.constants import Action, Observation, config
@@ -28,7 +29,6 @@ def get_values(q_table, observation):
 
 class Agent:
     epsilon = INITIAL_EPSILON
-    counter = 0
 
     def __init__(self):
         if not SAVE_Q_TABLE and os.path.exists(FILE_NAME):
@@ -45,17 +45,17 @@ class Agent:
                     len(Action),
                 ]
             )
-            # target_x, target_y, is_fire_present, agent_x, agent_y, action
+            # target_x, target_y, is_fire_present, agent_x, agent_y, action = 12960
 
-    def get_action(self, actions: list[Action], obs: Observation) -> int:
+    def get_action(self, actions: list[Action], observation: Observation) -> int:
         """
         Returns the best action with probability (1 - epsilon)
         otherwise a random action with probability epsilon to ensure exploration.
         """
         if np.random.uniform(0, 1) < self.epsilon:
-            return actions.sample()
-        else:  # with probability (1 - epsilon) act greedily (exploit)
-            return np.argmax(get_values(self.q_table, obs))
+            return decide_random_action(get_values(self.q_table, observation))
+        else:
+            return np.argmax(get_values(self.q_table, observation))
 
     def update(
         self,
@@ -65,7 +65,6 @@ class Agent:
         terminated: bool,
         next_obs: Observation,
     ):
-        """Updates the Q-value of an action."""
         q_value = get_values(self.q_table, obs)[action]
         future_q_value = np.max(get_values(self.q_table, next_obs))
 

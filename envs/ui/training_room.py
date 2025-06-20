@@ -1,3 +1,4 @@
+import numpy as np
 from envs.ui.room import RoomFactory
 from envs.tiles.item import Item, Items
 from envs.tiles.wall import Wall
@@ -29,4 +30,5 @@ class TrainingRoom(RoomFactory):
         grid.tiles[0][3] = Item(grid.tiles[0][3], Items.BOOKSHELF_FULL)
         grid.tiles[1][0] = Item(grid.tiles[1][0], Items.BED_RED)
         grid.tiles[2][0] = Item(grid.tiles[2][0], Items.POT_GREEN)
-        grid.tiles[3][2].is_on_fire = True
+        if np.random.rand() < 0.5:
+            grid.tiles[3][2].is_on_fire = True

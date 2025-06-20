@@ -162,7 +162,7 @@ class Metrics:
         plt.tight_layout(rect=[0, 0.03, 1, 0.95])
         plt.legend()
         plt.savefig(
-            f"metrics/metrics.dr={config.distance_reward}.tsp={config.time_step_punishment}.N={N_EPISODES}.png"
+            f"metrics/metrics.dr={config.distance_reward}.tsp={config.time_step_punishment}.N={N_EPISODES}.im={config.illeagal_move_punishment}.fer={config.fire_extinguished_reward}.df={config.discount_factor}.png.png"
         )
         plt.close()
 

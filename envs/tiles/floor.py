@@ -64,7 +64,9 @@ class Floor(Tile):
         image = None
         match type:
             case FloorType.TILE:
-                image = sprite_map["floor_tile"]
+                self._set_image(image)
+                return
+
             case FloorType.BLUE:
                 image = sprite_map["blue_carpet"]
             case FloorType.RED:
