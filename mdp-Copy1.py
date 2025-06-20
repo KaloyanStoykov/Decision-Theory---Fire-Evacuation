@@ -19,7 +19,7 @@ load_srpite_map()
 
 
 gym.envs.registration.register(
-    id="FireFighterWorld-v0",  # It's good practice to add a version
+    id="FireFighterWorld-v0",
     entry_point="envs:FireFighterWorld",
 )
 
