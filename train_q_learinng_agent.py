@@ -13,7 +13,7 @@ def create_env():
     )
 
     env = gym.make("FireFighterWorld", render_mode="human" if RENDER else "rgb_array")
-    env.reset(seed=42)
+    env.reset(seed=42, options = {"preset_fire_positions":[(3,2)]})
 
     return env
 
@@ -27,7 +27,7 @@ metrics = Metrics()
 
 def run():
     env = create_env()
-    observation, _ = env.reset()
+    observation, _ = env.reset(options={"preset_fire_positions":[(3,2)]})
 
     for _ in range(N_EPISODES):
         for _ in range(MAX_STEPS_PER_EPISODE):
@@ -43,7 +43,7 @@ def run():
 
         metrics.new_episode(agent.epsilon, info["distance"], agent.q_table, observation)
         agent.decay_epsilon()
-        observation, _ = env.reset()
+        observation, _ = env.reset(options={"preset_fire_positions":[(3,2)]})
 
     env.close()
     metrics.save()
